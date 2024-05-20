@@ -3,7 +3,9 @@
 ## 环境配置
 
 sqlite：https://www.runoob.com/sqlite/sqlite-installation.html
+
 flask：`pip install flask` 或 `pip install -r requirements.txt`
+
 react：先配置nodejs
 
 python 推荐使用虚拟环境，我使用的是 3.8 版本
