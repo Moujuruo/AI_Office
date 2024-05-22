@@ -15,6 +15,7 @@
     "@types/react": "^18.3.2",
     "@types/react-dom": "^18.3.0",
     "antd": "^5.17.2",
+    "moment": "^2.30.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.23.1",
@@ -48,5 +49,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/moment": "^2.13.0"
   }
 }
