@@ -203,6 +203,7 @@ def updateActivity(activity):
         print(activity)  # {"UserID": 1, "ActivityName": "Meeting", "ActivityBeginDate": "2024-05-21", "ActivityBeginTime": "10:00:00", "ActivityEndDate": "2024-05-21", "ActivityEndTime": "11:00:00"}
         activity = json.loads(activity)
         activityID = activity.get('ActivityID', 0)
+        UserID = int(activity.get('UserID', 0))
         result = ''
         newActivityID = activityID
 
@@ -244,7 +245,7 @@ def updateActivity(activity):
                     sets += ("'%s'" % value)
                 else:
                     sets += str(value)
-            sql = 'UPDATE TodoActivity SET %s WHERE ActivityID=%d' % (sets, activityID)
+            sql = 'UPDATE TodoActivity SET %s WHERE ActivityID=%d and UserID=%d' % (sets, activityID, UserID)
             cursor.execute(sql)
             conn.commit()
             result = '修改成功'
@@ -253,9 +254,9 @@ def updateActivity(activity):
         print(repr(e))
         return '新增或修改失败'
 
-def getActivities():
+def getActivities(UserID):
     try:
-        sql = 'SELECT * FROM TodoActivity'
+        sql = 'SELECT * FROM TodoActivity where UserID = %d' % UserID
         cursor.execute(sql)
         activities = cursor.fetchall()
         return activities
@@ -291,6 +292,7 @@ def insertOrUpdateTodoItem(item):
         item_id = item.get('ItemID', 0)
         ItemContent = item.get('ItemContent', '')
         ItemLevel = item.get('ItemLevel', 0)
+        # UserID = int(item.get('UserID', 0))
         print(item_id,ItemContent,ItemLevel)
         if item_id == 0:  # 新增
             keys = ''
@@ -384,39 +386,4 @@ def getTodoItemsByActivity(activity_id):
 
 
 
-
-# # 测试用的数据
-# activity_json = json.dumps({
-#     "UserID": 1,
-#     "ActivityName": "Team Meeting",
-#     "ActivityBeginDate": "2024-05-21",
-#     "ActivityBeginTime": "10:00:00",
-#     "ActivityEndDate": "2024-05-21",
-#     "ActivityEndTime": "11:00:00"
-# })
-
-# # print(insertActivity(activity_json))
-
-# # 获取所有活动
-# activities = getActivities()
-# print(getActivitiesFromData(activities))
-
-# # 删除活动（假设删除ID为1的活动）
-# print(deleteActivity(4))
-
-# item_json = json.dumps({
-#     "ActivityID": 1,
-#     "UserID": 1,
-#     "ItemContent": "Complete project documentation",
-#     "ItemLevel": 1
-# })
-
-# print(insertOrUpdateTodoItem(item_json))
-
-# 获取所有活动
-# items = getTodoItems()
-# print(getTodoItemsFromData(items))
-
-# # 删除活动（假设删除ID为1的活动）
-# print(deleteTodoItem(2))
 

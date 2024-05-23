@@ -101,7 +101,7 @@ def insertActivity():
 @app.route(apiPrefix + 'getActivityList/<int:job>')
 def getActivityList(job):
     try:
-        array = DBUtil.getActivities()
+        array = DBUtil.getActivities(job)
         jsonActivities = DBUtil.getActivitiesFromData(array)
         return json.dumps(jsonActivities)
     except Exception as e:
