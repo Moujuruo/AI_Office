@@ -47,7 +47,7 @@ const MainLayout: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <UserOutlined style={{ fontSize: '24px', marginRight: '8px' }} />
                         <span>你好, {username}</span>
-                        <Dropdown menu={{items}}>
+                        <Dropdown menu={{items}} trigger={['click']}>
                             <a onClick={e => e.preventDefault()} style={{ marginLeft: '8px' }}>
                                 <DownOutlined />
                             </a>

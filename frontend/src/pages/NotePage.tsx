@@ -14,21 +14,19 @@ import '../css/NotePage.css'
 const { Content } = Layout;
 const { Panel } = Collapse;
 
-class NoteList extends React.Component<{}> {
+class NoteList extends React.Component {
     state = {
-        value: ''
-    };
-
-    newNoteInfo = {
         title: '',
         content: ''
     };
 
-
-    handleChange = (value: string) => {
-        this.setState({ value });
+    handleTitleChange = (e: any) => {
+        this.setState({ title: e.target.value });
     }
 
+    handleContentChange = (value: any) => {
+        this.setState({ content: value });
+    }
 
     render() {
         return (
@@ -39,19 +37,16 @@ class NoteList extends React.Component<{}> {
                   <Input
                     placeholder="请输入笔记名称"
                     style={{ width: 200, marginRight: 10, marginBottom: 10 }}
-                    value={this.newNoteInfo.title}
-                    onChange={(e) => {
-                      this.newNoteInfo.title = e.target.value;
-                    }}
+                    value={this.state.title}
+                    onChange={this.handleTitleChange}
                   />
-                  {/* TODO: Button的触发 */}
                   <Button>添加</Button>
                 </div>
                 <div>
                   <ReactQuill
                     theme="snow"
-                    value={this.newNoteInfo.content}
-                    onChange={this.handleChange}
+                    value={this.state.content}
+                    onChange={this.handleContentChange}
                     modules={{
                       toolbar: [
                         ["bold", "italic", "underline", "strike"], // toggled buttons
