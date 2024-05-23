@@ -33,6 +33,8 @@ def createTables():
             ActivityBeginTime TIME,
             ActivityEndDate DATE,
             ActivityEndTime TIME,
+            create_time TIMESTAMP NOT NULL DEFAULT (datetime('now','localtime')),
+            modify_time TIMESTAMP NOT NULL DEFAULT (datetime('now','localtime')),
             FOREIGN KEY (UserID) REFERENCES users(id)
         );'''
         cursor.execute(sql_create_todo_activity)
@@ -44,6 +46,8 @@ def createTables():
                 UserID INTEGER,
                 ItemContent TEXT,
                 ItemLevel TEXT,
+                create_time TIMESTAMP NOT NULL DEFAULT (datetime('now','localtime')),
+                modify_time TIMESTAMP NOT NULL DEFAULT (datetime('now','localtime')),
                 FOREIGN KEY (UserID) REFERENCES users (id),
                 FOREIGN KEY (ActivityID) REFERENCES TodoActivity (ActivityID)
             )

@@ -1,17 +1,40 @@
 import React from 'react';
 import { ProLayout } from '@ant-design/pro-components';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
-import { Layout, Button } from 'antd';
+import { Layout, Button, Dropdown, Menu } from 'antd';
+import type { MenuProps } from 'antd';
+import { UserOutlined, DownOutlined, SmileOutlined } from '@ant-design/icons';
 
 const { Header, Content } = Layout;
 
 const MainLayout: React.FC = () => {
     const navigate = useNavigate();
+    const username = localStorage.getItem('username');
 
     const logout = () => {
         localStorage.removeItem('token');
         navigate('/login');
     };
+
+    // const menu = (
+    //     <Menu>
+    //         <Menu.Item key="logout" onClick={logout}>
+    //             退出登录
+    //         </Menu.Item>
+    //     </Menu>
+    // );
+
+    const items: MenuProps['items'] = [
+        {
+            key: 'logout',
+            onClick: logout,
+            // children: '退出登录',
+            label: (
+                <a >退出登录</a>
+            ),
+            icon: <SmileOutlined />
+        },
+    ]
 
     return (
         <ProLayout
@@ -20,9 +43,16 @@ const MainLayout: React.FC = () => {
             layout="mix"
             navTheme="light"
             headerRender={() => (
-                <Header className="header">
-                    <Button onClick={logout} style={{ position: "absolute", left: "70px", top: "20px" }}>Logout</Button>
-                    {/* <h1 style={{ color: "lightblue", textAlign: "center" }}>智能办公管理系统</h1> */}
+                <Header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <UserOutlined style={{ fontSize: '24px', marginRight: '8px' }} />
+                        <span>你好, {username}</span>
+                        <Dropdown menu={{items}}>
+                            <a onClick={e => e.preventDefault()} style={{ marginLeft: '8px' }}>
+                                <DownOutlined />
+                            </a>
+                        </Dropdown>
+                    </div>
                 </Header>
             )}
             menuItemRender={(item, dom) => <Link to={item.path || '/'}>{dom}</Link>}
