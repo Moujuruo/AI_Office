@@ -43,8 +43,8 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({ visible, onAdd, onCancel,
             const formattedValues = {
                 ...values,
                 ActivityID: activityId,
-                //ItemId: ItemId,
                 ItemID: editingItem ? editingItem.ItemID : undefined,
+                UserID: localStorage.getItem('userID') || 0
             };
             HttpUtil.post(ApiUtil.API_Item_UPDATE, formattedValues)
                 .then((data: any) => {

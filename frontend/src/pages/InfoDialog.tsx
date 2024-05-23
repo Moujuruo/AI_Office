@@ -48,8 +48,10 @@ const ActivityDialog: React.FC<ActivityDialogProps> = ({ visible, afterClose, on
         ActivityBeginDate: values.ActivityBeginDate.format('YYYY-MM-DD'),
         ActivityEndDate: values.ActivityEndDate.format('YYYY-MM-DD'),
         ActivityBeginTime: values.ActivityBeginTime.format('HH:mm:ss'),
-        ActivityEndTime: values.ActivityEndTime.format('HH:mm:ss')
+        ActivityEndTime: values.ActivityEndTime.format('HH:mm:ss'),
+        UserID:localStorage.getItem('userID')||0
       };
+      console.log("UserID:"+localStorage.getItem('userID'));
       HttpUtil.post(ApiUtil.API_Activity_UPDATE, formattedValues).then((data: any) => {
         setSuccess(true);
         afterClose();
