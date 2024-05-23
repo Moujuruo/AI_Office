@@ -102,7 +102,7 @@ class TodoList extends React.Component<{}, TodoListState> {
     }
 
     getData = () => {
-        HttpUtil.get(ApiUtil.API_Activity_LIST + 0)
+        HttpUtil.get(ApiUtil.API_Activity_LIST + localStorage.getItem('userID'))
             .then(async (response) => {
                 const activityList = response as TodoActivity[];
                 const activityListWithItems = await Promise.all(activityList.map(async (activity) => {
