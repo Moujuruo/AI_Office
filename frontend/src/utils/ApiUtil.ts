@@ -15,4 +15,5 @@ export default class ApiUtil {
 
 
     static API_LOGIN = ApiUtil.URL_ROOT + '/login';
+    static API_REGISTER = ApiUtil.URL_ROOT + '/register';
 }
