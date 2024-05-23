@@ -29,6 +29,7 @@ const MainLayout: React.FC = () => {
             menuDataRender={() => [
                 { path: '/', name: '首页', default: true },
                 { path: '/staff-list', name: '日程表' },
+                { path: '/notelist-page', name: '笔记备忘录' },
                 { path: '/another-page', name: '其他页面' },
             ]}
         >
