@@ -6,9 +6,6 @@ import SqliteUtil as DBUtil
 app = Flask(__name__, template_folder='../front-end', static_folder='../front-end')
 CORS(app)  # 启用CORS
 
-users = {
-    "admin": "123"
-}
 
 @app.route('/hi')
 def hi():
@@ -24,16 +21,30 @@ def login():
     data = request.json
     username = data.get('username')
     password = data.get('password')
-    if username in users and users[username] == password:
-        # return jsonify({"token": "dummy-token"}), 200
-        return jsonify(
-            {
-                "token": "dummy-token",
-                "status": 200,
-            }
-        )
-    return jsonify({"message": "Invalid credentials"}), 401
+    result = DBUtil.get_user_password(username)
+    id = DBUtil.get_user_ID(username)["id"]
+    print(id)
+    if result["status"] == 200 and result["password"] == password:
+        # return jsonify({"token": "dummy-token", "status": 200})
+        return jsonify({"userID": id, "status": 200}), 200
+    elif result["status"] == 404:
+        return jsonify({"message": "用户不存在"}), 404
+    else:
+        return jsonify({"message": "密码错误"}), 401
 
+################## Register接口 ##################
+@app.route(apiPrefix + 'register', methods=['POST'])
+def register():
+    # password = data.get('password')
+    data = request.json
+    username = data.get('username')
+    # password = data.get('password')
+    pswd = data.get('password')
+    gender = data.get('gender')
+
+    result = DBUtil.insert_user(username, pswd, gender)
+    return jsonify(result), result["status"]
+    
 
 
 ##################  Staff接口  ##################

@@ -3,12 +3,13 @@ import { ProForm, ProFormText } from '@ant-design/pro-components';
 import { Button, message, Space } from 'antd';
 import { GithubOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import HttpUtil from '../utils/HttpUtil';
-import ApiUtil from '../utils/ApiUtil';
+import HttpUtil from '../../utils/HttpUtil';
+import ApiUtil from '../../utils/ApiUtil';
 
 interface LoginResponse {
   status: number;
   token?: string;
+  userID?: string;
   message?: string;
 }
 
@@ -24,7 +25,9 @@ const Login: React.FC = () => {
 
       if (data.status === 200) {
         message.success('登录成功');
-        localStorage.setItem('token', data.token || ''); // Save token to localStorage
+        // localStorage.setItem('token', data.token || ''); // Save token to localStorage
+        localStorage.setItem('username', values.username);
+        localStorage.setItem('userID', data.userID!);
         navigate('/homepage'); // Redirect to homepage
       } else {
         console.log(data);

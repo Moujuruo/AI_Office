@@ -14,15 +14,15 @@ def createTables():
     # 姓名、年龄、地址
     try:
         cursor = conn.cursor()
-        sql_create_t_staff = '''create table IF NOT EXISTS t_staff(
+        sql_create_users = '''create table IF NOT EXISTS users(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name VARCHAR(20),
-            age INTEGER,
-            address VARCHAR(20),
+            username VARCHAR(20) UNIQUE,
+            password VARCHAR(100),
+            gender VARCHAR(10),
             create_time TIMESTAMP NOT NULL DEFAULT (datetime('now','localtime')),
             modify_time TIMESTAMP NOT NULL DEFAULT (datetime('now','localtime'))
         )'''
-        cursor.execute(sql_create_t_staff)
+        cursor.execute(sql_create_users)
         # 创建 TodoActivity 表
         sql_create_todo_activity = '''
             CREATE TABLE IF NOT EXISTS TodoActivity(
@@ -33,7 +33,7 @@ def createTables():
             ActivityBeginTime TIME,
             ActivityEndDate DATE,
             ActivityEndTime TIME,
-            FOREIGN KEY (UserID) REFERENCES t_staff(id)
+            FOREIGN KEY (UserID) REFERENCES users(id)
         );'''
         cursor.execute(sql_create_todo_activity)
         # 创建 TodoItem 表
@@ -44,7 +44,7 @@ def createTables():
                 UserID INTEGER,
                 ItemContent TEXT,
                 ItemLevel TEXT,
-                FOREIGN KEY (UserID) REFERENCES t_staff (id),
+                FOREIGN KEY (UserID) REFERENCES users (id),
                 FOREIGN KEY (ActivityID) REFERENCES TodoActivity (ActivityID)
             )
         '''
@@ -59,6 +59,44 @@ print("Tables created successfully")
 
 staffColumns = ("id", "name", "age", "address")
 activityColumns = ("ActivityID", "UserID", "ActivityName", "ActivityBeginDate", "ActivityBeginTime", "ActivityEndDate", "ActivityEndTime")
+
+#### 用户相关操作 ###
+def insert_user(username, password, gender):
+    try:
+        cursor.execute("INSERT INTO users (username, password, gender) VALUES (?, ?, ?)", (username, password, gender))
+        conn.commit()
+        return {"status": 200, "message": "注册成功"}
+    except sqlite3.IntegrityError:
+        return {"status": 400, "message": "用户名已存在"}
+    except Exception as e:
+        return {"status": 500, "message": f"数据库错误: {e}"}
+
+def get_user_password(username):
+    try:
+        cursor.execute("SELECT password FROM users WHERE username = ?", (username,))
+        result = cursor.fetchone()
+        if result:
+            return {"status": 200, "password": result[0]}
+        else:
+            return {"status": 404, "message": "用户不存在"}
+    except Exception as e:
+        return {"status": 500, "message": f"数据库错误: {e}"}
+    
+def get_user_ID(username):
+    try:
+        cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
+        result = cursor.fetchone()
+        if result:
+            return {"status": 200, "id": result[0]}
+        else:
+            return {"status": 404, "message": "用户不存在"}
+    except Exception as e:
+        return {"status": 500, "message": f"数据库错误: {e}"}
+
+
+#################
+
+##### 以下为框架操作，暂时不用 #####
 
 def insertStaff(staff):
     try:
@@ -84,7 +122,7 @@ def insertStaff(staff):
                     values += ("'%s'" % value)
                 else:
                     values += str(value)
-            sql = 'insert into t_staff(%s) values(%s)' % (keys, values)
+            sql = 'insert into users(%s) values(%s)' % (keys, values)
             cursor.execute(sql)
             newId = cursor.lastrowid
             conn.commit()
@@ -106,7 +144,7 @@ def insertStaff(staff):
                     sets += ("'%s'" % value)
                 else:
                     sets += str(value)
-            sql = 'update t_staff set %s where id=%d' % (sets, id)
+            sql = 'update users set %s where id=%d' % (sets, id)
             cursor.execute(sql)
             conn.commit()
             result = '修改成功'
@@ -118,7 +156,7 @@ def insertStaff(staff):
 
 def getStaffs():
     try:
-        sql = 'select * from t_staff'
+        sql = 'select * from users'
         cursor.execute(sql)
         staffs = cursor.fetchall()
         # print(staffs)
@@ -145,13 +183,16 @@ def getStaffsFromData(dataList):
 
 def deleteStaff(staff_id):
     try:
-        sql = 'DELETE FROM t_staff WHERE id = ?'
+        sql = 'DELETE FROM users WHERE id = ?'
         cursor.execute(sql, (staff_id,))
         conn.commit()
         return '删除成功'
     except Exception as e:
         print(repr(e))
         return '删除失败'
+    
+
+#######################
     
 def updateActivity(activity):
     try:
