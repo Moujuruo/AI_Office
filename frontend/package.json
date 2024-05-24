@@ -2,7 +2,7 @@
   "name": "antd-demo",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://moujuruo.github.io/AI_Office/"
+  "homepage": "https://moujuruo.github.io/AI_Office/",
   "proxy": "http://127.0.0.1:5001",
   "dependencies": {
     "@ant-design/icons": "^5.3.7",
