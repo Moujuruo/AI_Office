@@ -9,6 +9,7 @@ import ProtectedRoute from './router/ProtectedRoute';
 import MainLayout from './pages/MainLayout';
 import Homepage from './pages/HomePage';
 import NoteList from './pages/NotePage';
+import RoomBooking from './pages/Reservation/ReservationPage';
 
 const App: React.FC = () => {
     return (
@@ -20,7 +21,7 @@ const App: React.FC = () => {
             <Route index element={<Homepage />} />
             <Route path="staff-list" element={<TodoList />} />
             <Route path="notelist-page" element={<NoteList />} />
-            <Route path="another-page" element={<TodoList />} />
+            <Route path="reservation-page" element={<RoomBooking />} />
             <Route path="*" element={<Navigate to="/" />} /> {/* Changed this line */}
           </Route>
           <Route path="*" element={<Navigate to="/login" />} />
