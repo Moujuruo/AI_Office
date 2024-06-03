@@ -63,7 +63,7 @@ const MainLayout: React.FC = () => {
                 { path: '/', name: '首页', default: true },
                 { path: '/staff-list', name: '日程表' },
                 { path: '/notelist-page', name: '笔记备忘录' },
-                { path: '/another-page', name: '其他页面' },
+                { path: '/reservation-page', name: '会议室预定' },
             ]}
         >
             <Content style={{ padding: '0 24px 24px' }}>
