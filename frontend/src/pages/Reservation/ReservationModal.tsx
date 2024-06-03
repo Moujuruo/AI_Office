@@ -1,98 +1,171 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Form, Select, DatePicker, Input, Slider } from 'antd';
+import { Modal, Form, Select, DatePicker, Input, Slider, message } from 'antd';
 import moment from 'moment';
+import HttpUtil from '../../utils/HttpUtil';
+import ApiUtil from '../../utils/ApiUtil';
 
 const { Option } = Select;
+
+interface ApiResponse<T> {
+  status: number;
+  data: T;
+}
+
+interface Room {
+  id: number;
+  name: string;
+  capacity: number;
+  floor: number;
+  equipment: string;
+}
+
+interface Reservation {
+  room_id: number;
+  start_time: string;
+  end_time: string;
+  date: string;
+}
 
 interface ReservationModalProps {
     visible: boolean;
     onOk: () => void;
     onCancel: () => void;
     form: any;
-  }
-  
-  const bookedTimes: Record<string, [number, number][]> = {
-    'F1-3-1': [[9, 10], [14, 15]],
-    'F1-3-2': [[11, 12], [13, 14]],
-    'F1-3-3': [[8, 9], [16, 17]],
+    meetingRooms: Room[];
+    fetchReservations: (date: string) => void;
+    reservations: Reservation[];
+}
+
+const ReservationModal: React.FC<ReservationModalProps> = ({
+  visible,
+  onOk,
+  onCancel,
+  form,
+  meetingRooms,
+  fetchReservations,
+  reservations,
+}) => {
+  const [sliderValue, setSliderValue] = useState<number[]>([8, 9]);
+  const [room, setRoom] = useState<number>(meetingRooms[0]?.id || 0);
+  const [bookedTimes, setBookedTimes] = useState<[number, number][]>([]);
+
+  useEffect(() => {
+    form.setFieldsValue({
+      person: localStorage.getItem('username') || '默认用户',
+    });
+  }, [form]);
+
+  useEffect(() => {
+    if (room && form.getFieldValue('date')) {
+      fetchBookedTimes(room, form.getFieldValue('date').format('YYYY-MM-DD'));
+    }
+  }, [room, form.getFieldValue('date')]);
+
+  const fetchBookedTimes = async (roomId: number, date: string) => {
+    try {
+      const response = await HttpUtil.post(ApiUtil.API_GET_ROOM_RESERVATIONS, { room_id: roomId, date }) as ApiResponse<Reservation[]>;
+      if (response.status === 200) {
+        const times: [number, number][] = response.data.map(reservation => [
+          moment(reservation.start_time, 'HH:mm').hour(),
+          moment(reservation.end_time, 'HH:mm').hour()
+        ]);
+        setBookedTimes(times);
+      } else {
+        message.error('获取预定信息失败');
+      }
+    } catch (error) {
+      message.error('获取预定信息失败');
+    }
   };
   
-  const meetingRooms = [
-    { name: 'F1-3-1' },
-    { name: 'F1-3-2' },
-    { name: 'F1-3-3' },
-  ];
-  
-  const ReservationModal: React.FC<ReservationModalProps> = ({ visible, onOk, onCancel, form }) => {
-    const [sliderValue, setSliderValue] = useState<number[]>([8, 9]);
-    const [room, setRoom] = useState<string>(meetingRooms[0].name);
-  
-    useEffect(() => {
-      form.setFieldsValue({
-        person: localStorage.getItem('username') || '默认用户',
-      });
-    }, [form]);
-  
-    const marks = {
-      8: '08:00',
-      22: '22:00',
-    };
-  
-    const bookedMarks = bookedTimes[room].reduce((acc: any, [start, end]) => {
-      acc[start] = {
-        style: { color: 'red' },
-        label: `${start}:00`,
-      };
-      acc[end] = {
-        style: { color: 'blue' },
-        label: `${end}:00`,
-      };
-      return acc;
-    }, {});
-  
-    const handleSliderChange = (value: number[]) => {
-      setSliderValue(value);
-    };
-  
-    const formatSliderTooltip = (value?: number) => {
-      if (value === undefined) return '';
-      const hours = Math.floor(value);
-      const minutes = (value - hours) * 60;
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-    };
-  
-    return (
-      <Modal title="创建预约" open={visible} onOk={form.submit} onCancel={onCancel}>
-        <Form form={form} layout="vertical" onFinish={onOk}>
-          <Form.Item name="room" label="会议室" rules={[{ required: true, message: '请选择会议室' }]}>
-            <Select onChange={(value: string) => setRoom(value)} value={room}>
-              {meetingRooms.map(room => (
-                <Option key={room.name} value={room.name}>{room.name}</Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item name="date" label="日期" rules={[{ required: true, message: '请选择日期' }]}>
-            <DatePicker />
-          </Form.Item>
-          <Form.Item name="time" label="选择时间段" rules={[{ required: true, message: '请选择时间段' }]}>
-            <Slider
-              range
-              min={8}
-              max={22}
-              defaultValue={[8, 22]}
-              step={0.25}
-              marks={{ ...marks, ...bookedMarks }}
-              value={sliderValue}
-              onChange={handleSliderChange}
-              tooltip={{ formatter: formatSliderTooltip }}
-            />
-          </Form.Item>
-          <Form.Item name="title" label="会议主题" rules={[{ required: true, message: '请输入会议主题' }]}>
-            <Input />
-          </Form.Item>
-        </Form>
-      </Modal>
-    );
+
+  const marks = {
+    8: '08:00',
+    22: '22:00',
   };
-  
-  export default ReservationModal;
+
+  const bookedMarks = bookedTimes.reduce((acc: any, [start, end]) => {
+    acc[start] = {
+      style: { color: 'red' },
+      label: `${start}:00`,
+    };
+    acc[end] = {
+      style: { color: 'blue' },
+      label: `${end}:00`,
+    };
+    return acc;
+  }, {});
+
+  const handleSliderChange = (value: number[]) => {
+    setSliderValue(value);
+  };
+
+  const formatSliderTooltip = (value?: number) => {
+    if (value === undefined) return '';
+    const hours = Math.floor(value);
+    const minutes = (value - hours) * 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  };
+
+  const handleDateChange = (date: moment.Moment | null) => {
+    if (date) {
+      fetchBookedTimes(room, date.format('YYYY-MM-DD'));
+    }
+  };
+
+  const handleSubmit = async (values: any) => {
+    try {
+      const newReservation = {
+        room_id: values.room_id,
+        user_id: localStorage.getItem('user_id') || 1, // Assuming user_id is stored in localStorage or a default value
+        start_time: moment().startOf('day').add(values.time[0], 'hours').format('HH:mm'),
+        end_time: moment().startOf('day').add(values.time[1], 'hours').format('HH:mm'),
+        date: values.date.format('YYYY-MM-DD'),
+      };
+      const response = await HttpUtil.post(ApiUtil.API_INSERT_RESERVATION, newReservation) as ApiResponse<any>;
+      if (response.status === 200) {
+        message.success('预约成功');
+        onOk();
+      } else {
+        message.error('预约失败');
+      }
+    } catch (error) {
+      message.error('预约失败');
+    }
+  };
+
+  return (
+    <Modal title="创建预约" open={visible} onOk={form.submit} onCancel={onCancel}>
+      <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        <Form.Item name="room_id" label="会议室" rules={[{ required: true, message: '请选择会议室' }]}>
+          <Select onChange={(value: number) => setRoom(value)} value={room}>
+            {meetingRooms.map(room => (
+              <Option key={room.id} value={room.id}>{room.name}</Option>
+            ))}
+          </Select>
+        </Form.Item>
+        <Form.Item name="date" label="日期" rules={[{ required: true, message: '请选择日期' }]}>
+          <DatePicker onChange={handleDateChange} />
+        </Form.Item>
+        <Form.Item name="time" label="选择时间段" rules={[{ required: true, message: '请选择时间段' }]}>
+          <Slider
+            range
+            min={8}
+            max={22}
+            defaultValue={[8, 22]}
+            step={0.25}
+            marks={{ ...marks, ...bookedMarks }}
+            value={sliderValue}
+            onChange={handleSliderChange}
+            tooltip={{ formatter: formatSliderTooltip }}
+          />
+        </Form.Item>
+        <Form.Item name="title" label="会议主题" rules={[{ required: true, message: '请输入会议主题' }]}>
+          <Input />
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+};
+
+export default ReservationModal;

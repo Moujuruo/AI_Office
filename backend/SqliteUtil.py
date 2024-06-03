@@ -4,7 +4,7 @@ import json
 import csv
 from sqlite3 import Error
 
-db_name = 'from_zero'
+db_name = 'Ai_work'
 
 conn = sqlite3.connect(db_name + '.db', check_same_thread=False)
 # conn.execute("PRAGMA foreign_keys = ON")  # 启用外键支持
