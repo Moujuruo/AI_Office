@@ -16,4 +16,11 @@ export default class ApiUtil {
 
     static API_LOGIN = ApiUtil.URL_ROOT + '/login';
     static API_REGISTER = ApiUtil.URL_ROOT + '/register';
+
+    static API_GET_ALL_ROOMS = ApiUtil.URL_ROOT + '/getAllRooms';
+    static API_GET_ALL_RESERVATIONS = ApiUtil.URL_ROOT + '/getAllReservations';
+    static API_GET_ROOM_RESERVATIONS = ApiUtil.URL_ROOT + '/getRoomReservations';
+    static API_INSERT_RESERVATION = ApiUtil.URL_ROOT + '/insertReservation';
+
+
 }

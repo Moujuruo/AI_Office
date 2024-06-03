@@ -1,42 +1,86 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, DatePicker, Input, Form } from 'antd';
+import { Button, DatePicker, Input, Form, message } from 'antd';
 import { LeftOutlined, RightOutlined, ReloadOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import ReservationModal from './ReservationModal';
+import HttpUtil from '../../utils/HttpUtil';
+import ApiUtil from '../../utils/ApiUtil';
 
 const { Search } = Input;
 
-const meetingRooms = [
-  { name: 'F1-3-1', capacity: 20 },
-  { name: 'F1-3-2', capacity: 20 },
-  { name: 'F1-3-3', capacity: 20 },
-];
+interface ApiResponse<T> {
+    status: number;
+    data: T;
+}
 
-const initialReservations = [
-  { room: 'F1-3-1', startTime: '13:00', endTime: '15:00', date: '2024-06-03' },
-  { room: 'F1-3-2', startTime: '09:30', endTime: '11:15', date: '2024-06-03' },
-];
+interface Room {
+    id: number;
+    name: string;
+    capacity: number;
+    floor: number;
+    equipment: string;
+}
+
+interface Reservation {
+    room_id: number;
+    start_time: string;
+    end_time: string;
+    date: string;
+}
 
 const RoomBooking = () => {
   const [selectedDate, setSelectedDate] = useState(moment());
-  const [filteredRooms, setFilteredRooms] = useState(meetingRooms);
+  const [filteredRooms, setFilteredRooms] = useState<Room[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm();
-  const [reservations, setReservations] = useState(initialReservations);
-
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [floorFilter, setFloorFilter] = useState<string>('');
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    filterRooms();
+    fetchRooms();
+  }, []); // 组件首次渲染时调用 fetchRooms
+
+  useEffect(() => {
+    fetchReservations(selectedDate.format('YYYY-MM-DD'));
   }, [selectedDate]);
 
+  const fetchRooms = async (value = '') => {
+    try {
+      const response = await HttpUtil.post(ApiUtil.API_GET_ALL_ROOMS, { search: value }) as ApiResponse<Room[]>;
+      console.log(response);
+      if (response.status === 200) {
+        setFilteredRooms(response.data);
+      } else {
+        message.error('获取会议室信息失败');
+      }
+    } catch (error) {
+      message.error('获取会议室信息失败');
+    }
+  };
+
+  const fetchReservations = async (date: string) => {
+    try {
+      console.log(date);
+      const response = await HttpUtil.post(ApiUtil.API_GET_ALL_RESERVATIONS, { date }) as ApiResponse<Reservation[]>;
+      console.log(response);
+      if (response.status === 200) {
+        setReservations(response.data);
+      } else {
+        message.error('获取预定信息失败');
+      }
+    } catch (error) {
+      message.error('获取预定信息失败');
+    }
+  };
+
   const filterRooms = (value = '') => {
-    const filtered = meetingRooms.filter(room => room.name.includes(value));
+    const filtered = filteredRooms.filter(room => room.name.includes(value) && room.floor.toString().includes(floorFilter));
     setFilteredRooms(filtered);
   };
 
   const handleSearch = (value: string) => {
-    filterRooms(value);
+    fetchRooms(value);
   };
 
   const handleDateChange = (date: moment.Moment | null) => {
@@ -45,7 +89,14 @@ const RoomBooking = () => {
 
   const handleCapacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const capacity = parseInt(e.target.value, 10);
-    const filtered = meetingRooms.filter(room => room.capacity >= capacity);
+    const filtered = filteredRooms.filter(room => room.capacity >= capacity && room.floor.toString().includes(floorFilter));
+    setFilteredRooms(filtered);
+  };
+
+  const handleFloorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const floor = e.target.value;
+    setFloorFilter(floor);
+    const filtered = filteredRooms.filter(room => room.floor.toString().includes(floor) && room.capacity.toString().includes(floor));
     setFilteredRooms(filtered);
   };
 
@@ -66,29 +117,36 @@ const RoomBooking = () => {
     setModalVisible(true);
   };
 
-  const handleModalOk = () => {
-    form.validateFields().then((values) => {
-      const newReservation = {
-        room: values.room,
-        startTime: moment().startOf('day').add(values.time[0], 'hours').format('HH:mm'),
-        endTime: moment().startOf('day').add(values.time[1], 'hours').format('HH:mm'),
-        date: values.date.format('YYYY-MM-DD'),
-      };
-      setReservations([...reservations, newReservation]);
-      setModalVisible(false);
-    });
-  };
+//   const handleModalOk = (values: any) => {
+//     const newReservation = {
+//       room_id: values.room_id,
+//       start_time: moment().startOf('day').add(values.time[0], 'hours').format('HH:mm'),
+//       end_time: moment().startOf('day').add(values.time[1], 'hours').format('HH:mm'),
+//       date: values.date.format('YYYY-MM-DD'),
+//     };
+//     setReservations([...reservations, newReservation]);
+//     setModalVisible(false);
+//   };
+
+    const handleModalOk = () => {
+    // 重新获取预约信息
+        fetchReservations(selectedDate.format('YYYY-MM-DD'));
+        setModalVisible(false);
+    };
 
   const handleModalCancel = () => {
     setModalVisible(false);
   };
 
   const renderReservations = (room: any) => {
+    console.log(room);
+    console.log(reservations);
     return reservations
-      .filter(res => res.room === room.name && res.date === selectedDate.format('YYYY-MM-DD'))
+      .filter(res => res.room_id === room.id && res.date === selectedDate.format('YYYY-MM-DD'))
       .map((res, index) => {
-        const start = moment(res.startTime, 'HH:mm');
-        const end = moment(res.endTime, 'HH:mm');
+        console.log(res);
+        const start = moment(res.start_time, 'HH:mm');
+        const end = moment(res.end_time, 'HH:mm');
         const duration = moment.duration(end.diff(start)).asHours();
         const startOffset = moment.duration(start.diff(moment(start).startOf('day').add(8, 'hours'))).asHours();
         return (
@@ -127,6 +185,7 @@ const RoomBooking = () => {
         <Button onClick={handleNextDay} icon={<RightOutlined />} />
         <Search placeholder="请输入关键字" onSearch={handleSearch} style={{ width: 200, marginLeft: 16 }} />
         <Input placeholder="容纳人数" type="number" onChange={handleCapacityChange} style={{ width: 100, marginLeft: 16 }} />
+        <Input placeholder="楼层" type="number" onChange={handleFloorChange} style={{ width: 100, marginLeft: 16 }} />
         <Button onClick={handleRefresh} icon={<ReloadOutlined />} style={{ marginLeft: 16 }} />
         <Button type="primary" onClick={handleCreateReservation} style={{ marginLeft: 16 }}>创建预约</Button>
       </div>
@@ -138,7 +197,7 @@ const RoomBooking = () => {
           </div>
         </div>
         {filteredRooms.map(room => (
-          <div key={room.name} style={{ display: 'flex', flexDirection: 'row', marginBottom: 16 }}>
+          <div key={room.id} style={{ display: 'flex', flexDirection: 'row', marginBottom: 16 }}>
             <div style={{ width: '150px', textAlign: 'center', lineHeight: '50px', border: '1px solid #ccc', borderRight: 'none', }}>
               {room.name}
             </div>
@@ -157,9 +216,13 @@ const RoomBooking = () => {
         onOk={handleModalOk}
         onCancel={handleModalCancel}
         form={form}
-      />
+        meetingRooms={filteredRooms}
+        fetchReservations={fetchReservations}
+        reservations={reservations}
+        />
     </div>
   );
 };
 
 export default RoomBooking;
+

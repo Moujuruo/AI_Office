@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import json
 import SqliteUtil as DBUtil
+import sqlite_roombooking as RBooking
 
 app = Flask(__name__, template_folder='../front-end', static_folder='../front-end')
 CORS(app)  # 启用CORS
@@ -184,6 +185,63 @@ def getItemsByActivity(activity_id):
         return json.dumps(jsonItems)
     except Exception as e:
         return json.dumps({'code': 1, 'message': str(e)}), 500
+
+########## meeting_room 接口 ##########
+@app.route(apiPrefix + 'getAllRooms', methods=['POST'])
+def getAllRooms():
+    rooms = RBooking.getallrooms()
+    if rooms is None:
+        return jsonify({'code': 1, 'message': '获取会议室列表失败', 'status': 500 }), 500
+
+    keys = ['id', 'name', 'floor', 'capacity', 'equipment']
+    rooms_list = [dict(zip(keys, room)) for room in rooms]
+
+    return jsonify({'code': 0, 'message': '获取会议室列表成功', 'status': 200, 'data': rooms_list}), 200
+
+@app.route(apiPrefix + 'getAllReservations', methods=['POST'])
+def getAllReservations():
+    data = request.get_json()
+    print(data)
+    
+    date = data.get('date')
+    reservations = RBooking.getallreservations(date)
+    if reservations is None:
+        return jsonify({'code': 1, 'message': '获取预约列表失败', 'status': 500 })
+
+    keys = ['id', 'room_id', 'user_id', 'start_time', 'end_time', 'date']
+    reservations_list = [dict(zip(keys, reservation)) for reservation in reservations]
+
+    return jsonify({'code': 0, 'message': '获取预约列表成功', 'status': 200, 'data': reservations_list}), 200
+
+@app.route(apiPrefix + 'getRoomReservations', methods=['POST'])
+def getRoomReservations():
+    data = request.get_json()
+    print(data)
+    
+    room_id = data.get('room_id')
+    date = data.get('date')
+    reservations = RBooking.getallreservationsbyroom(room_id, date)
+    if reservations is None:
+        return jsonify({'code': 1, 'message': '获取会议室预约列表失败', 'status': 500 })
+    keys = ['id', 'room_id', 'user_id', 'start_time', 'end_time', 'date']
+    reservations_list = [dict(zip(keys, reservation)) for reservation in reservations]
+    return jsonify({'code': 0, 'message': '获取会议室预约列表成功', 'status': 200, 'data': reservations_list}), 200
+
+@app.route(apiPrefix + 'insertReservation', methods=['POST'])
+def insertReservation():
+    data = request.get_json()
+    print(data)
+    
+    room_id = data.get('room_id')
+    user_id = data.get('user_id')
+    start_time = data.get('start_time')
+    end_time = data.get('end_time')
+    date = data.get('date')
+    reservation = RBooking.insertreservation(room_id, user_id, start_time, end_time, date)
+    if reservation == False:
+        return jsonify({'code': 1, 'message': '添加会议室预约失败', 'status': 500 })
+    return jsonify({'code': 0, 'message': '添加会议室预约成功', 'status': 200, 'data': reservation
+    }), 200
 
 
 if __name__ == "__main__":
