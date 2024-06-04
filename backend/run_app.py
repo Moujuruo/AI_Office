@@ -3,6 +3,8 @@ from flask_cors import CORS
 import json
 import SqliteUtil as DBUtil
 import sqlite_roombooking as RBooking
+import llm_interface as LLM
+from arrow import Arrow
 
 app = Flask(__name__, template_folder='../front-end', static_folder='../front-end')
 CORS(app)  # 启用CORS
@@ -242,6 +244,33 @@ def insertReservation():
         return jsonify({'code': 1, 'message': '添加会议室预约失败', 'status': 500 })
     return jsonify({'code': 0, 'message': '添加会议室预约成功', 'status': 200, 'data': reservation
     }), 200
+
+
+##### AI 接口 #####
+@app.route(apiPrefix + 'getAIResult', methods=['POST'])
+def getAIResult():
+    prompt = '''
+        你是一个智能办公助手，我会给你一些以json格式发送的数据，如果我的问题与这些数据有关，你需要严格根据数据回答问题。
+        每间会议室的预约时间段是从8:00到22:00。
+    '''
+    data = request.get_json()
+    # print(data)
+    content = data.get('content')
+
+    date = Arrow.now().format('YYYY-MM-DD')
+    reservations = RBooking.getallreservations(date)
+    keys = ['id', 'room_id', 'user_id', 'start_time', 'end_time', 'date']
+    reservations_list = [dict(zip(keys, reservation)) for reservation in reservations]
+    content = prompt + '\n\n' + json.dumps(reservations_list, ensure_ascii=False) + '\n\n' + content
+
+    print(content)
+
+
+    llm = LLM.LLMInterface()
+    response = llm.query(content)
+    return jsonify({'code': 0, 'message': '获取AI结果成功', 'status': 200, 'data': response}), 200
+
+
 
 
 if __name__ == "__main__":
