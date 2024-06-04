@@ -1,20 +1,45 @@
 import React from 'react';
 import { ProChat } from '@ant-design/pro-chat';
+import HttpUtil from '../utils/HttpUtil';
+import ApiUtil from '../utils/ApiUtil';
+
+interface ApiResponse<T> {
+    status: number;
+    data: T;
+}
 
 const Homepage: React.FC = () => {
+    const handleRequest = async (messages: any) => {
+        try {
+            // 这里假设 messages 是一个数组，提取其内容发送到后端
+            const content = messages.map((msg: any) => msg.content).join('\n');
+            
+            const response = await HttpUtil.post(ApiUtil.API_AI_CHAT, { content }) as ApiResponse<any>;
+            
+            if (response.status !== 200) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            console.log(response.data);
+            // return new Response('测试换行\n\n1234567');
+            return new Response(response.data);
+        } catch (error) {
+            console.error('Error fetching chat response:', error);
+            return new Response('Error fetching chat response', { status: 500 });
+        }
+    };
     return (
         <div>
-            <h2>这是主页</h2>
-            <p>这里是另外一个页面的内容。</p>
-            <ProChat
-                helloMessage={
-                '欢迎使用 ProChat ，我是你的专属机器人，这是我们的 Github：[ProChat](https://github.com/ant-design/pro-chat)'
-                }
-                request={async (messages) => {
-                const mockedData: string = `这是一段模拟的对话数据。本次会话传入了${messages.length}条消息`;
-                return new Response(mockedData);
-                }}
-            />
+            <h2>协时通：智能办公平台</h2>
+            <div style={{ height: '500px' }}>
+                <ProChat
+                    // displayMode={'docs'}
+                    helloMessage={
+                    '欢迎使用协时通，我是你的智能AI助手！'
+                    }
+                    request={handleRequest}
+                    
+                />
+            </div>
         </div>
     );
 };

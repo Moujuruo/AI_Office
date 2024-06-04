@@ -245,9 +245,29 @@ def insertReservation():
     return jsonify({'code': 0, 'message': '添加会议室预约成功', 'status': 200, 'data': reservation
     }), 200
 
+@app.route(apiPrefix + 'getUserReservations', methods=['POST'])
+def getUserReservations(): 
+    data = request.get_json()
+    user_id = data.get('user_id')
+    reservations = RBooking.getuserreservations(user_id)
+    if reservations is None:
+        return jsonify({'code': 1, 'message': '获取用户预约列表失败', 'status': 500 })
+    keys = ['id', 'room_id', 'user_id', 'start_time', 'end_time', 'date', 'room_name']
+    # date 小于今天的不显示
+    reservations_list = []
+    for reservation in reservations:
+        print(reservation)
+        if reservation[5] >= Arrow.now().format('YYYY-MM-DD'):
+            reservations_list.append(dict(zip(keys, reservation)))
+    # reservations_list = [dict(zip(keys, reservation)) for reservation in reservations]
+    # 按开始时间排序
+    reservations_list.sort(key=lambda x: x['start_time'])
+    print(reservations_list)
+    return jsonify({'code': 0, 'message': '获取用户预约列表成功', 'status': 200, 'data': reservations_list}), 200
+
 
 ##### AI 接口 #####
-@app.route(apiPrefix + 'getAIResult', methods=['POST'])
+@app.route(apiPrefix + 'aiChat', methods=['POST'])
 def getAIResult():
     prompt = '''
         你是一个智能办公助手，我会给你一些以json格式发送的数据，如果我的问题与这些数据有关，你需要严格根据数据回答问题。
@@ -268,6 +288,7 @@ def getAIResult():
 
     llm = LLM.LLMInterface()
     response = llm.query(content)
+    print(response)
     return jsonify({'code': 0, 'message': '获取AI结果成功', 'status': 200, 'data': response}), 200
 
 

@@ -22,5 +22,13 @@ export default class ApiUtil {
     static API_GET_ROOM_RESERVATIONS = ApiUtil.URL_ROOT + '/getRoomReservations';
     static API_INSERT_RESERVATION = ApiUtil.URL_ROOT + '/insertReservation';
 
+    static API_GET_USER_RESERVATIONS = ApiUtil.URL_ROOT + '/getUserReservations';
+    static API_DELETE_RESERVATION
+    = ApiUtil.URL_ROOT + '/deleteReservation';
+    static API_UPDATE_RESERVATION
+    = ApiUtil.URL_ROOT + '/updateReservation';
+
+    static API_AI_CHAT
+    = ApiUtil.URL_ROOT + '/aiChat';
 
 }

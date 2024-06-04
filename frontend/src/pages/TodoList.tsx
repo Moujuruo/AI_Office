@@ -198,19 +198,19 @@ class TodoList extends React.Component<{}, TodoListState> {
             });
     };
 
-    gotoAdmin = () => {
-        this.setState({
-            showAdmin: true,
-            show_back: "block",
-        });
-    };
+    // gotoAdmin = () => {
+    //     this.setState({
+    //         showAdmin: true,
+    //         show_back: "block",
+    //     });
+    // };
 
-    onBack = () => {
-        this.setState({
-            showAdmin: false,
-            show_back: "none",
-        });
-    };
+    // onBack = () => {
+    //     this.setState({
+    //         showAdmin: false,
+    //         show_back: "none",
+    //     });
+    // };
 
 
     renderItems = (items: TodoItem[]) => {
@@ -292,7 +292,8 @@ class TodoList extends React.Component<{}, TodoListState> {
 
     render() {
         console.log('Data:', this.state.data);
-        const columns = this.state.showAdmin ? [...this.columns, this.admin_item] : this.columns;
+        // const columns = this.state.showAdmin ? [...this.columns, this.admin_item] : this.columns;
+        const columns = [...this.columns, this.admin_item]
         return (
             <Layout>
                 <Content>
@@ -340,12 +341,12 @@ class TodoList extends React.Component<{}, TodoListState> {
 
                         
 
-                        <div style={{ position: "absolute", left: "10px", bottom: "10px" }}>
+                        {/* <div style={{ position: "absolute", left: "10px", bottom: "10px" }}>
                             <a onClick={this.gotoAdmin}>管理员</a>
                         </div>
                         <div style={{ position: "absolute", left: "70px", bottom: "10px", display: this.state.show_back }}>
                             <a onClick={this.onBack}>返回</a>
-                        </div>
+                        </div> */}
 
                     </div>
                 </Content>

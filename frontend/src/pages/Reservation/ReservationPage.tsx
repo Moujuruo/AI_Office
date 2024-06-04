@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, DatePicker, Input, Form, message } from 'antd';
+import { Button, DatePicker, Input, Form, message, Pagination  } from 'antd';
 import { LeftOutlined, RightOutlined, ReloadOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import ReservationModal from './ReservationModal';
 import HttpUtil from '../../utils/HttpUtil';
 import ApiUtil from '../../utils/ApiUtil';
+import RoomInfoTooltip from './RoomInfoToolTip';
+import MyReservationsModal from './MyReservation';
 
 const { Search } = Input;
 
@@ -36,6 +38,9 @@ const RoomBooking = () => {
     const [reservations, setReservations] = useState<Reservation[]>([]);
     const [floorFilter, setFloorFilter] = useState<string>('');
     const [rooms, setRooms] = useState<Room[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [myReservationsModalVisible, setMyReservationsModalVisible] = useState(false);
     const scrollRef = useRef(null);
 
     useEffect(() => {
@@ -74,6 +79,11 @@ const RoomBooking = () => {
         } catch (error) {
             message.error('获取预定信息失败');
         }
+    };
+
+    const handlePageChange = (page: number, pageSize?: number) => {
+        setCurrentPage(page);
+        setPageSize(pageSize || 10);
     };
 
     const filterRooms = (value = '') => {
@@ -136,6 +146,15 @@ const RoomBooking = () => {
         setModalVisible(false);
     };
 
+    // 我的预约
+    const handleMyReservationsClick = () => {
+        setMyReservationsModalVisible(true);
+    };
+    
+    const handleMyReservationsCancel = () => {
+        setMyReservationsModalVisible(false);
+    };
+
     const renderReservations = (room: any) => {
         console.log(room);
         console.log(reservations);
@@ -175,6 +194,8 @@ const RoomBooking = () => {
         ));
     };
 
+    const paginatedRooms = filteredRooms.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
     return (
         <div>
             <div style={{ marginBottom: 16 }}>
@@ -186,6 +207,7 @@ const RoomBooking = () => {
                 <Input placeholder="楼层" type="number" onChange={handleFloorChange} style={{ width: 100, marginLeft: 16 }} />
                 <Button onClick={handleRefresh} icon={<ReloadOutlined />} style={{ marginLeft: 16 }} />
                 <Button type="primary" onClick={handleCreateReservation} style={{ marginLeft: 16 }}>创建预约</Button>
+                <Button onClick={handleMyReservationsClick} style={{ marginLeft: 16 }}>我的预约</Button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', overflowX: 'auto' }} ref={scrollRef}>
                 <div style={{ display: 'flex', flexDirection: 'row', marginBottom: 16 }}>
@@ -194,20 +216,29 @@ const RoomBooking = () => {
                         {renderTimeSlots()}
                     </div>
                 </div>
-                {filteredRooms.map(room => (
+                {paginatedRooms.map(room => (
                     <div key={room.id} style={{ display: 'flex', flexDirection: 'row', marginBottom: 16 }}>
                         <div style={{ width: '150px', textAlign: 'center', lineHeight: '50px', border: '1px solid #ccc', borderRight: 'none', }}>
-                            {room.name}
+                        <RoomInfoTooltip room={room} reservations={reservations} selectedDate={selectedDate} />
                         </div>
                         <div style={{ position: 'relative', width: 'calc(100% - 150px)', border: '1px solid #ccc', height: '50px' }}>
-                            {renderReservations(room)}
-                            {Array.from({ length: 15 }, (_, hour) => (
-                                <div key={hour} style={{ position: 'absolute', left: `calc(${hour * 100 / 15}% )`, height: '50px', width: 'calc(100% / 15)', borderLeft: '1px solid #ccc' }}>
-                                </div>
-                            ))}
+                        {renderReservations(room)}
+                        {Array.from({ length: 15 }, (_, hour) => (
+                            <div key={hour} style={{ position: 'absolute', left: `calc(${hour * 100 / 15}% )`, height: '50px', width: 'calc(100% / 15)', borderLeft: '1px solid #ccc' }}>
+                            </div>
+                        ))}
                         </div>
                     </div>
-                ))}
+                    ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+                <Pagination
+                current={currentPage}
+                pageSize={pageSize}
+                total={filteredRooms.length}
+                onChange={handlePageChange}
+                showSizeChanger
+                />
             </div>
             <ReservationModal
                 visible={modalVisible}
@@ -218,9 +249,14 @@ const RoomBooking = () => {
                 fetchReservations={fetchReservations}
                 reservations={reservations}
             />
+            <MyReservationsModal 
+                visible={myReservationsModalVisible}
+                onCancel={handleMyReservationsCancel}
+                fetchReservations={fetchReservations}
+            />
         </div>
     );
 };
-
+    
 export default RoomBooking;
 

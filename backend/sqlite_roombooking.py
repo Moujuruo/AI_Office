@@ -39,13 +39,6 @@ def insertMeetingRoom(name, floor, capacity, info):
                     (name, floor, capacity, info))
     conn.commit()
 
-## 测试用，先插入一些数据 ##
-def insertTestData():
-    insertMeetingRoom("会议室1", 1, 10, '{"设备": ["投影仪", "话筒"]}')
-    insertMeetingRoom("会议室2", 1, 20, '{"设备": ["投影仪", "话筒", "白板"]}')
-    insertMeetingRoom("会议室3", 2, 15, '{"设备": ["投影仪", "话筒", "白板", "电脑"]}')
-
-# insertTestData()
 
 def getallrooms():
     # cursor.execute("SELECT * FROM meeting_room")
@@ -94,5 +87,18 @@ def insertreservation(room_id, user_id, start_time, end_time, date):
     except sqlite3.Error as e:
         print(e)
         return False
+    finally:
+        lock_threading.release()
+
+def getuserreservations(user_id):
+    try:
+        lock_threading.acquire()
+        # cursor.execute("SELECT * FROM booking WHERE user_id=?", (user_id,))
+        # 加上会议室名称
+        cursor.execute("SELECT booking.*, meeting_room.name FROM booking JOIN meeting_room ON booking.room_id = meeting_room.id WHERE booking.user_id=?", (user_id,))
+        return cursor.fetchall()
+    except sqlite3.Error as e:
+        print(e)
+        return None
     finally:
         lock_threading.release()
