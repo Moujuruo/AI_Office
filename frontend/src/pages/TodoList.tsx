@@ -1,7 +1,7 @@
 import React from 'react';
-import { Layout, Button, message, Modal, Collapse } from 'antd';
+import { Layout, Button,Input, message, Modal, Collapse } from 'antd';
 import { ProTable, ProColumns } from '@ant-design/pro-components';
-import {EditOutlined, CloseOutlined, PlusOutlined} from '@ant-design/icons';
+import {EditOutlined, CloseOutlined, PlusOutlined, SearchOutlined} from '@ant-design/icons';
 import InfoDialog from './InfoDialog';
 import AddItemDialog from './AddItemDialog';
 import HttpUtil from '../utils/HttpUtil';
@@ -9,6 +9,7 @@ import ApiUtil from '../utils/ApiUtil';
 
 const { Content } = Layout;
 const {Panel} = Collapse;
+const { Search } = Input;
 
 
 export interface TodoItem {
@@ -55,6 +56,9 @@ class TodoList extends React.Component<{}, TodoListState> {
         data: [],
     };
 
+    // 添加一个新的状态用于存储搜索结果
+    searchData: TodoActivity[] = [];
+
     columns: ProColumns<TodoActivity>[] = [
         {
             title: '活动名称',
@@ -97,6 +101,46 @@ class TodoList extends React.Component<{}, TodoListState> {
         ),
     };
 
+   
+
+    //搜索功能
+    handleSearch = (value: string) => {
+        if (!value) {
+            this.setState({ data: this.searchData });
+            return;
+        }
+    
+        // 将搜索值转换为小写以进行不区分大小写的匹配
+        const searchValue = value.toLowerCase();
+    
+        const filteredData = this.searchData.filter(activity => {
+            //检查活动名称是否包含搜索值（不区分大小写）
+            const activityNameMatch = activity.ActivityName.toLowerCase().includes(searchValue);
+    
+            //检查活动事项是否包含搜索值（不区分大小写）
+            const itemContentMatch = activity.items.some(item => item.ItemContent.toLowerCase().includes(searchValue));
+    
+            return activityNameMatch || itemContentMatch;
+        });
+    
+        this.setState({ data: filteredData });
+    };
+    // handleSearch = (value: string) => {
+    //     if (!value) {
+    //         this.setState({ data: this.searchData });
+    //         return;
+    //     }
+    //     const filteredData = this.searchData.filter(activity =>
+    //         activity.ActivityName.includes(value) ||
+    //         activity.items.some(item => item.ItemContent.includes(value))
+    //     );
+    //     this.setState({ data: filteredData });
+    // };
+
+    showAllData = () => {
+        this.setState({ data: this.searchData });
+    };
+
     componentDidMount() {
         this.getData();
     }
@@ -115,6 +159,7 @@ class TodoList extends React.Component<{}, TodoListState> {
                                 }));
                 console.log("activityListWithItems", activityListWithItems);
                 console.log("activityListWithKeys", activityListWithKeys);
+                this.searchData = activityListWithItems; // 保存所有数据以供搜索使用
                 this.setState({
                     data: activityListWithItems,
                     showInfoDialog: false,
@@ -296,8 +341,18 @@ class TodoList extends React.Component<{}, TodoListState> {
         return (
             <Layout>
                 <Content>
+
                     <div style={{ background: '#fff', padding: 24, minHeight: 480 }}>
-                        <Button style={{ position: "absolute", right: "70px", top: "20px" }} onClick={() => this.showUpdateDialog()}>
+                        <Search
+                            placeholder="搜索活动或事项"
+                            onSearch={this.handleSearch}
+                            enterButton={<SearchOutlined />}
+                            style={{ width: 200, marginRight: 16 }}
+                        />
+                        <Button onClick={this.showAllData}>
+                            显示全部
+                        </Button>
+                        <Button style={{ position: "absolute", right: "70px", top: "20px",}} onClick={() => this.showUpdateDialog()}>
                             添加
                         </Button>
 

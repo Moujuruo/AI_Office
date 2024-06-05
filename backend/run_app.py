@@ -187,7 +187,7 @@ def getItemsByActivity(activity_id):
         return json.dumps(jsonItems)
     except Exception as e:
         return json.dumps({'code': 1, 'message': str(e)}), 500
-
+    
 ########## meeting_room 接口 ##########
 @app.route(apiPrefix + 'getAllRooms', methods=['POST'])
 def getAllRooms():
