@@ -10,6 +10,7 @@ import MainLayout from './pages/MainLayout';
 import Homepage from './pages/HomePage';
 import NoteList from './pages/NotePage';
 import RoomBooking from './pages/Reservation/ReservationPage';
+import TeamManagement from './pages/Team/TeamManagement';
 
 const App: React.FC = () => {
     return (
@@ -22,6 +23,7 @@ const App: React.FC = () => {
             <Route path="staff-list" element={<TodoList />} />
             <Route path="notelist-page" element={<NoteList />} />
             <Route path="reservation-page" element={<RoomBooking />} />
+            <Route path="team-page" element={<TeamManagement />} />
             <Route path="*" element={<Navigate to="/" />} /> {/* Changed this line */}
           </Route>
           <Route path="*" element={<Navigate to="/login" />} />

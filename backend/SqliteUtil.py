@@ -20,7 +20,9 @@ def createTables():
             password VARCHAR(100),
             gender VARCHAR(10),
             create_time TIMESTAMP NOT NULL DEFAULT (datetime('now','localtime')),
-            modify_time TIMESTAMP NOT NULL DEFAULT (datetime('now','localtime'))
+            modify_time TIMESTAMP NOT NULL DEFAULT (datetime('now','localtime')),
+            status INTEGER DEFAULT 1,
+            avatar VARCHAR(255)
         )'''
         cursor.execute(sql_create_users)
         # 创建 TodoActivity 表
@@ -79,6 +81,7 @@ def get_user_password(username):
     try:
         cursor.execute("SELECT password FROM users WHERE username = ?", (username,))
         result = cursor.fetchone()
+        print(result)
         if result:
             return {"status": 200, "password": result[0]}
         else:
@@ -96,6 +99,34 @@ def get_user_ID(username):
             return {"status": 404, "message": "用户不存在"}
     except Exception as e:
         return {"status": 500, "message": f"数据库错误: {e}"}
+
+def get_user_avatar(username):
+    try:
+        cursor.execute("SELECT avatar FROM users WHERE username = ?", (username,))
+        result = cursor.fetchone()
+        if result:
+            return {"status": 200, "avatar": result[0]}
+        else:
+            return {"status": 404, "message": "用户不存在"}
+    except Exception as e:
+        return {"status": 500, "message": f"数据库错误: {e}"}
+    
+def change_user_status(userID, status):
+    try:
+        cursor.execute("UPDATE users SET status = ? WHERE id = ?", (status, userID))
+        conn.commit()
+        return {"status": 200, "message": "状态更新成功"}
+    except Exception as e:
+        return {"status": 500, "message": f"数据库错误: {e}"}
+    
+def update_user_avatar(userID, avatar):
+    try:
+        cursor.execute("UPDATE users SET avatar = ? WHERE id = ?", (avatar, userID))
+        conn.commit()
+        return {"status": 200, "message": "头像更新成功"}
+    except Exception as e:
+        return {"status": 500, "message": f"数据库错误: {e}"}
+
 
 
 #################
