@@ -28,6 +28,7 @@ def createTables():
         start_time TEXT NOT NULL,
         end_time TEXT NOT NULL,
         date TEXT NOT NULL,
+        subject TEXT NOT NULL,
         FOREIGN KEY (room_id) REFERENCES meeting_room(id),
         FOREIGN KEY (user_id) REFERENCES users(id))''')
     conn.commit()
@@ -77,11 +78,11 @@ def getallreservationsbyroom(room_id, date):
     finally:
         lock_threading.release()
 
-def insertreservation(room_id, user_id, start_time, end_time, date):
+def insertreservation(room_id, user_id, start_time, end_time, date, subject):
     try:
         lock_threading.acquire()
-        cursor.execute("INSERT INTO booking (room_id, user_id, start_time, end_time, date) VALUES (?, ?, ?, ?, ?)",
-                        (room_id, user_id, start_time, end_time, date))
+        cursor.execute("INSERT INTO booking (room_id, user_id, start_time, end_time, date, subject) VALUES (?, ?, ?, ?, ?, ?)",
+                        (room_id, user_id, start_time, end_time, date, subject))
         conn.commit()
         return True
     except sqlite3.Error as e:

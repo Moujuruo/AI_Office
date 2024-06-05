@@ -11,6 +11,7 @@ interface LoginResponse {
   token?: string;
   userID?: string;
   message?: string;
+  avatar?: string;
 }
 
 const Login: React.FC = () => {
@@ -28,6 +29,9 @@ const Login: React.FC = () => {
         // localStorage.setItem('token', data.token || ''); // Save token to localStorage
         localStorage.setItem('username', values.username);
         localStorage.setItem('userID', data.userID!);
+        if (data.avatar) {
+          localStorage.setItem('avatarUrl', data.avatar);
+        }
         navigate('/homepage'); // Redirect to homepage
       } else {
         console.log(data);

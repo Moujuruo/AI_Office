@@ -34,6 +34,21 @@ export default class HttpUtil{
         })
     }
 
+    static upload(url: any, formData: any) {
+        return new Promise((resolve, reject) => {
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(result => resolve(result))
+            .catch(error => {
+                reject(error);
+            });
+        });
+    }
+    
+
     static delete(url: any) {
         return new Promise((resolve, reject) => {
             fetch(url, {

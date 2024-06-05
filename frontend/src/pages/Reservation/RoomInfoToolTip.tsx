@@ -3,11 +3,6 @@ import { Tooltip } from 'antd';
 import moment from 'moment';
 
 
-interface ApiResponse<T> {
-    status: number;
-    data: T;
-}
-
 interface Room {
     id: number;
     name: string;

@@ -17,6 +17,7 @@ interface Reservation {
   end_time: string;
   date: string;
   room_name: string;
+  subject: string;
 }
 
 interface MyReservationsModalProps {
@@ -125,6 +126,12 @@ const MyReservationsModal: React.FC<MyReservationsModalProps> = ({
       title: '会议室',
       dataIndex: 'room_name',
       key: 'room_name',
+    },
+    {
+        title: '会议主题',
+        dataIndex: 'subject',
+        key: 'subject',
+
     },
     {
       title: '日期',

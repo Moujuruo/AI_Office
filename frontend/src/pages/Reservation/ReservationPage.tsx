@@ -28,6 +28,7 @@ interface Reservation {
     start_time: string;
     end_time: string;
     date: string;
+    subject: string;
 }
 
 const RoomBooking = () => {
@@ -239,7 +240,7 @@ const RoomBooking = () => {
                 onChange={handlePageChange}
                 showSizeChanger
                 />
-            </div>
+            </div>  
             <ReservationModal
                 visible={modalVisible}
                 onOk={handleModalOk}

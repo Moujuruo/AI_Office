@@ -24,6 +24,7 @@ interface Reservation {
   start_time: string;
   end_time: string;
   date: string;
+  subject: string;
 }
 
 interface ReservationModalProps {
@@ -121,6 +122,7 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
         start_time: moment().startOf('day').add(values.time[0], 'hours').format('HH:mm'),
         end_time: moment().startOf('day').add(values.time[1], 'hours').format('HH:mm'),
         date: values.date.format('YYYY-MM-DD'),
+        subject: values.title,
       };
       const response = await HttpUtil.post(ApiUtil.API_INSERT_RESERVATION, newReservation) as ApiResponse<any>;
       if (response.status === 200) {
