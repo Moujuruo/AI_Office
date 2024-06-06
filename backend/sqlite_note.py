@@ -13,20 +13,56 @@ conn = sqlite3.connect(db_name + '.db', check_same_thread=False)
 cursor = conn.cursor()
 
 def createTables():
-    # 笔记标题，，会议室楼层，会议室容量，会议室信息（json）
+    # 笔记标题，笔记内容，用户id
     cursor.execute('''CREATE TABLE IF NOT EXISTS notes
-        (id INTEGER PRIMARY KEY AUTOINCREMENT,
-        TEXT NOT NULL)''')
-    # 会议室预定id，会议室id，预定人id，预定开始时间，预定结束时间，预定日期
-    cursor.execute('''CREATE TABLE IF NOT EXISTS booking
-        (id INTEGER PRIMARY KEY AUTOINCREMENT,
-        room_id INTEGER NOT NULL,
+        (note_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        note_title TEXT NOT NULL,
+        note_content TEXT,
         user_id INTEGER NOT NULL,
-        start_time TEXT NOT NULL,
-        end_time TEXT NOT NULL,
-        date TEXT NOT NULL,
-        FOREIGN KEY (room_id) REFERENCES meeting_room(id),
         FOREIGN KEY (user_id) REFERENCES users(id))''')
     conn.commit()
 
+
 createTables()
+
+def insertNote(note_title, note_content, user_id):
+    try:
+        cursor.execute("INSERT INTO notes (note_title, note_content, user_id) VALUES (?, ?, ?)", 
+                        (note_title, note_content, user_id))
+        conn.commit()
+        return {"status": 200, "message": "添加成功"}
+    except Exception as e:
+        return {"status": 500, "message": f"数据库错误: {e}"}
+
+def updateNote(note_title, note_content, user_id):
+    try:
+        cursor.execute("UPDATE notes SET note_content = ? WHERE note_title = ? AND user_id = ?", 
+                        (note_content, note_title, user_id))
+        conn.commit()
+        return {"status": 200, "message": "更新成功"}
+    except Exception as e:
+        return {"status": 500, "message": f"数据库错误: {e}"}
+    
+def getNoteByTitle(note_title, user_id):
+    cursor.execute("SELECT * FROM notes WHERE note_title = ? AND user_id = ?", (note_title, user_id))
+    note = cursor.fetchone()
+    if note is None:
+        return False
+    else: 
+        return True
+    
+def getNoteTitleList(user_id):
+    cursor.execute("SELECT note_title FROM notes WHERE user_id = ?", (user_id,))
+    notes = cursor.fetchall()
+    return notes
+
+def getNoteContent(userid, title):
+    cursor.execute("SELECT note_content FROM notes WHERE user_id = ? AND note_title = ?", (userid, title))
+    note = cursor.fetchone()
+    print(note)
+    return note
+
+def deleteNoteByTitle(user_id, note_title):
+    cursor.execute("DELETE FROM notes WHERE note_title = ? AND user_id = ?", (note_title, user_id))
+    conn.commit()
+    return

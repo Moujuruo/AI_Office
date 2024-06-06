@@ -1,3 +1,7 @@
+export interface ApiResponse<T> {
+    status: number;
+    data: T;
+}
 export default class ApiUtil {
     static URL_IP = 'http://127.0.0.1:5001';
     static URL_ROOT = '/api/v1';
@@ -15,6 +19,7 @@ export default class ApiUtil {
 
     static API_NOTE_UPDATE = ApiUtil.URL_ROOT + '/updateNote';
     static API_NOTE_LIST = ApiUtil.URL_ROOT + '/getNoteList/';
+    static API_NOTE_CONTENT = ApiUtil.URL_ROOT + '/getNoteContent/';
     static API_NOTE_DELETE = ApiUtil.URL_ROOT + '/deleteNote/';
 
     static API_LOGIN = ApiUtil.URL_ROOT + '/login';
