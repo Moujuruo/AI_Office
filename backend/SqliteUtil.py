@@ -305,7 +305,7 @@ def getActivitiesFromData(dataList):
             activity[columnName] = columnValue
         activities.append(activity)
     return activities
- 
+
 def deleteActivity(activity_id):
     try:
         sql = 'DELETE FROM TodoActivity WHERE ActivityID = ?'

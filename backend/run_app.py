@@ -143,7 +143,7 @@ def insertActivity():
             }
         return json.dumps(re)
     except Exception as e:
-        return json.dumps({'code': 1, 'message': str(e)}), 500
+        return json.dumps({'code': -4, 'message': str(e)}), 500
 
 @app.route(apiPrefix + 'getActivityList/<int:job>')
 def getActivityList(job):
@@ -337,6 +337,54 @@ def getAIResult():
 
 
 
+
+##################  Note接口  ##################
+@app.route(apiPrefix + 'updateNote', methods=['POST'])
+def insertNote():
+    try:
+        data = request.get_json()
+        dumped_data = json.dumps(data)
+        # result = DBUtil.updateActivity(json.dumps(data))
+        # if result == '新增成功' or result == '修改成功':
+        #     re = {
+        #         'code': 0,
+        #         'message': result
+        #     }
+        # else:
+        #     re = {
+        #         'code': 1,
+        #         'message': result
+        #     }
+        # return json.dumps(re)
+    except Exception as e:
+        return json.dumps({'code': 1, 'message': str(e)}), 500
+
+# @app.route(apiPrefix + 'getActivityList/<int:job>')
+# def getActivityList(job):
+#     try:
+#         array = DBUtil.getActivities(job)
+#         jsonActivities = DBUtil.getActivitiesFromData(array)
+#         return json.dumps(jsonActivities)
+#     except Exception as e:
+#         return json.dumps({'code': 1, 'message': str(e)}), 500
+
+# @app.route(apiPrefix + 'deleteActivity/<int:id>')
+# def deleteActivity(id):
+#     try:
+#         result = DBUtil.deleteActivity(id)
+#         if result == '删除成功':
+#             re = {
+#                 'code': 0,
+#                 'message': result
+#             }
+#         else:
+#             re = {
+#                 'code': 1,
+#                 'message': result
+#             }
+#         return json.dumps(re)
+#     except Exception as e:
+#         return json.dumps({'code': 1, 'message': str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)

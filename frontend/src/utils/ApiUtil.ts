@@ -13,6 +13,9 @@ export default class ApiUtil {
     static API_Item_DELETE = ApiUtil.URL_ROOT + '/deleteItem/';
     static API_Item_LIST_BY_ACTIVITY = ApiUtil.URL_ROOT + '/getItemListByActivity/';
 
+    static API_NOTE_UPDATE = ApiUtil.URL_ROOT + '/updateNote';
+    static API_NOTE_LIST = ApiUtil.URL_ROOT + '/getNoteList/';
+    static API_NOTE_DELETE = ApiUtil.URL_ROOT + '/deleteNote/';
 
     static API_LOGIN = ApiUtil.URL_ROOT + '/login';
     static API_REGISTER = ApiUtil.URL_ROOT + '/register';
