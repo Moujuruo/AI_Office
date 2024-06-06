@@ -63,7 +63,7 @@ const MyReservationsModal: React.FC<MyReservationsModalProps> = ({
 
 
   const handleEdit = (reservation: Reservation) => {
-    setEditingReservation(reservation);
+    setEditingReservation(reservation); 
   };
 
   const handleDelete = async (reservationId: number) => {

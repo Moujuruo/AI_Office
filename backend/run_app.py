@@ -5,6 +5,7 @@ from flask_cors import CORS
 import json
 import SqliteUtil as DBUtil
 import sqlite_roombooking as RBooking
+import sqlite_note as RNote
 import sqlite_team as Team
 from werkzeug.utils import secure_filename
 import os
@@ -155,7 +156,7 @@ def insertActivity():
             }
         return json.dumps(re)
     except Exception as e:
-        return json.dumps({'code': 1, 'message': str(e)}), 500
+        return json.dumps({'code': -4, 'message': str(e)}), 500
 
 @app.route(apiPrefix + 'getActivityList/<int:job>')
 def getActivityList(job):
@@ -431,6 +432,53 @@ def getAllTeams():
     return jsonify({'code': 0, 'message': '获取团队列表成功', 'status': 200, 'data': team_list}), 200
 
 
+
+##################  Note接口  ##################
+@app.route(apiPrefix + 'updateNote', methods=['POST'])
+def insertNote():
+    data = request.get_json()
+    note_title = data.get('title')
+    note_content = data.get('content')
+    user_id = data.get('userName')
+    
+    existing_note = RNote.getNoteByTitle(note_title, user_id)
+    if existing_note:
+        result = RNote.updateNote(note_title, note_content, user_id)
+    else:
+        result = RNote.insertNote(note_title, note_content, user_id)
+    return jsonify(result), result['status']
+
+@app.route(apiPrefix + 'getNoteList/<user>')
+def getNoteList(user):
+    try:
+        array = RNote.getNoteTitleList(user)
+        response = {
+           'status': 200,
+           'data': array
+        }
+        return json.dumps(response)
+    except Exception as e:
+        return json.dumps({'status': 500, 'data': None})
+
+@app.route(apiPrefix + 'getNoteContent/<user>/<title>')
+def getNoteContent(user, title):
+    try:
+        content = RNote.getNoteContent(user, title);
+        response = {
+           'status': 200,
+           'data': content
+        }
+        return json.dumps(response)
+    except Exception as e:
+        return json.dumps({'status': 500, 'data': None})
+
+@app.route(apiPrefix + 'deleteNote/<user>/<title>')
+def deleteNoteByTitle(user, title):
+    try:
+        RNote.deleteNoteByTitle(user, title)
+        return json.dumps({'status': 200, 'data': None})
+    except Exception as e:
+        return json.dumps({'status': 500, 'data': None})
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
