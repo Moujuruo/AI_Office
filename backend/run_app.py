@@ -1,9 +1,11 @@
 # encoding: utf-8
+import re
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import json
 import SqliteUtil as DBUtil
 import sqlite_roombooking as RBooking
+import sqlite_team as Team
 from werkzeug.utils import secure_filename
 import os
 import llm_interface as LLM
@@ -124,6 +126,16 @@ def uploadAvatar():
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory("../uploads", filename)
+
+@app.route('/assets/<filename>')
+def assets_file(filename):
+    return send_from_directory("../assets", filename)
+
+@app.route(apiPrefix + 'getAvatarById', methods=['POST'])
+def getAvatarById():
+    data = request.get_json()
+    result = DBUtil.get_user_avatar_by_id(data['userID'])
+    return jsonify({'status': 200, 'message': 'success', 'data': result}), 200
 
 ##################  TodoActivity接口  ##################
 @app.route(apiPrefix + 'updateActivity', methods=['POST'])
@@ -287,6 +299,24 @@ def insertReservation():
     reservation = RBooking.insertreservation(room_id, user_id, start_time, end_time, date, subject)
     if reservation == False:
         return jsonify({'code': 1, 'message': '添加会议室预约失败', 'status': 500 })
+    activities = DBUtil.getActivities(user_id)
+    flag = False
+    for activity in activities:
+        if activity[2] == "会议":
+            flag = True
+            break
+    if flag == False:
+        meeting_activity = {}
+        meeting_activity['UserID'] = user_id
+        meeting_activity['ActivityName'] = "会议"
+        meeting_activity['ActivityBeginDate'] = date
+        meeting_activity['ActivityEndDate'] = date
+        meeting_activity['ActivityBeginTime'] = start_time
+        meeting_activity['ActivityEndTime'] = end_time
+        result = DBUtil.updateActivity(json.dumps(meeting_activity))
+        if result != '新增成功' and result != '修改成功':
+            return jsonify({'code': 1, 'message': '添加会议室预约到日程失败', 'status': 500 })
+
     return jsonify({'code': 0, 'message': '添加会议室预约成功', 'status': 200, 'data': reservation
     }), 200
 
@@ -311,15 +341,44 @@ def getUserReservations():
     return jsonify({'code': 0, 'message': '获取用户预约列表成功', 'status': 200, 'data': reservations_list}), 200
 
 
+
+
 ##### AI 接口 #####
 @app.route(apiPrefix + 'aiChat', methods=['POST'])
 def getAIResult():
-    prompt = '''你是一个智能办公助手，你的能力有下面几种: 1. 回答有关日程的安排。2. 回答有关会议室的安排 3. 帮助用户进行日程的插入 4. 帮助用户进行会议室的预约。5. 其它不属于以上四种的情况。无论用户输入什么，你的输出回答里都有且只能有一个阿拉伯数字，即判断是上面的五种能力中的哪一种。\n例如:用户输入:帮我预定一间下午的会议室，两个小时 你的回答:4; 用户输入:帮我查询今天研讨室的预约情况 你的回答:2; 用户输入:昨晚什么天气?利物浦赢了吗?1+1等于几 你的回答:5; 用户输入:帮我查查看今天有什么紧急的事 你的回答:1; 用户输入:帮我在旅游事项里加入一项订机票 你的回答:3;'''
+    prompt = '''你是一个智能办公助手，你的能力有下面几种: 1. 回答有关日程的安排。2. 回答有关会议室的安排、预约情况等 3. 帮助用户进行日程的插入 4. 帮助用户进行会议室的预约。5. 其它不属于以上四种的情况。无论用户输入什么，你的输出回答里都有且只能有一个阿拉伯数字，即判断是上面的五种能力中的哪一种。\n例如:用户输入:帮我预定一间下午的会议室，两个小时 你的回答:4; 用户输入:帮我查询今天研讨室的预约情况 你的回答:2; 用户输入:昨晚什么天气?利物浦赢了吗?1+1等于几 你的回答:5; 用户输入:帮我查查看今天有什么紧急的事 你的回答:1; 用户输入:帮我在旅游事项里加入一项订机票 你的回答:3;'''
     data = request.get_json()
+    userID = data.get('userID')
     content = data.get('content')
 
     llm_qianfa = LLM.Qianfan()
+    llm = LLM.LLMInterface()
     response = llm_qianfa.query(prompt + '\n\n' + content)
+    print(response)
+    # 提取response中的数字
+    response_type = re.findall(r'\d+', response)[0]
+    day_and_time = Arrow.now().format('YYYY-MM-DD HH:mm:ss')
+
+    if (response_type == '1'):
+        activities = DBUtil.getActivities(int(userID))
+        # print(activities)
+        keys = ["ActivityID", "UserID", "ActivityName", "ActivityBeginDate", "ActivityBeginTime", "ActivityEndDate", "ActivityEndTime"]
+        # keys和activities都删去第1列（从0开始）
+        activities_list = [dict(zip(keys, activity)) for activity in activities]
+        prompt_head = '''你是我的日程问答小助手，以下是我的日程安排：\n\n'''
+        prompt_tail = '''\n\n请回答我的问题：'''
+        prompt = prompt_head + str(activities_list) + '\n\n' + '现在的时间是：' + day_and_time + '\n\n' + prompt_tail + '\n\n'
+        response = llm.query(content, prefix_prompt=prompt)
+    elif (response_type == '2'):
+        reservations = RBooking.getallreservations(Arrow.now().format('YYYY-MM-DD'))
+        keys = ['id', 'room_id', 'user_id', 'start_time', 'end_time', 'date']
+        reservations_list = [dict(zip(keys, reservation)) for reservation in reservations]
+        prompt_head = '''你是我的预约记录问答小助手，以下是我的预约记录：\n\n'''
+        prompt_tail = '''\n\n请回答我的问题：'''
+        prompt = prompt_head + str(reservations_list) + '\n\n' + '现在的时间是：' + day_and_time + '\n\n' + prompt_tail + '\n\n'
+        response = llm.query(content, prefix_prompt=prompt)
+
+
 
     # date = Arrow.now().format('YYYY-MM-DD')
     # reservations = RBooking.getallreservations(date)
@@ -327,7 +386,7 @@ def getAIResult():
     # reservations_list = [dict(zip(keys, reservation)) for reservation in reservations]
     # content = prompt + '\n\n' + json.dumps(reservations_list, ensure_ascii=False) + '\n\n' + content
 
-    print( content)
+    # print(content)
 
 
     # llm = LLM.LLMInterface()
@@ -335,6 +394,41 @@ def getAIResult():
     print(response)
     return jsonify({'code': 0, 'message': '获取AI结果成功', 'status': 200, 'data': response}), 200
 
+############ team接口 ############
+@app.route(apiPrefix + 'getAllTeams', methods=['POST'])
+def getAllTeams(): 
+    data = request.get_json()
+    userID = data['userID']
+    
+    # 获取用户的团队信息，队长的团队排在前面
+    teams = Team.get_user_teams_with_captain_flag(userID)
+    if teams is False:
+        return jsonify({"error": "Failed to retrieve teams"}), 500
+    
+    # 获取每个团队的成员信息
+    team_list = []
+    for team in teams:
+        team_id = team[0]
+        team_info = {
+            "team_id": team[0],
+            "team_name": team[1],
+            "is_captain": team[3],
+            "members": []
+        }
+        
+        members = Team.get_team_members_with_details(team_id)
+        if members is False:
+            return jsonify({"error": f"Failed to retrieve members for team {team_id}"}), 500
+        
+        for member in members:
+            team_info["members"].append({
+                "member_id": member[0],
+                "is_captain": member[1]
+            })
+        
+        team_list.append(team_info)
+    # return jsonify({'code': 0, 'message': '获取团队列表成功', 'status': 200, 'data': result}), 200
+    return jsonify({'code': 0, 'message': '获取团队列表成功', 'status': 200, 'data': team_list}), 200
 
 
 

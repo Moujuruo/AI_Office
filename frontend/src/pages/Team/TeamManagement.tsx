@@ -1,46 +1,67 @@
-import React, { useState } from 'react';
-import { Row, Col } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Row, Col, message } from 'antd';
 import TeamCard from './TeamCard';
 import CustomButton from './CustomButton';
+import ApiUtil from '../../utils/ApiUtil';
+import HttpUtil from '../../utils/HttpUtil';
+
+interface Member {
+  member_id: number;
+  is_captain: string;
+}
+
+interface Team {
+  team_id: number;
+  team_name: string;
+  is_captain: number;
+  members: Member[];
+}
 
 const TeamManagement: React.FC = () => {
-  const [teams, setTeams] = useState([
-    {
-      name: '团队A',
-      members: [
-        { name: 'Alice', avatar: 'https://i.pravatar.cc/300?img=1' },
-        { name: 'Bob', avatar: 'https://i.pravatar.cc/300?img=2' },
-        { name: 'Charlie', avatar: 'https://i.pravatar.cc/300?img=3' },
-      ],
-    },
-    {
-      name: '团队B',
-      members: [],
-    },
-  ]);
+  const [teams, setTeams] = useState<Team[]>([]);
 
-  const handleAddMember = (teamIndex: number) => {
-    const newMember = { name: `New Member ${teams[teamIndex].members.length + 1}`, avatar: 'https://i.pravatar.cc/300' };
-    const newTeams = [...teams];
-    newTeams[teamIndex].members.push(newMember);
-    setTeams(newTeams);
+  useEffect(() => {
+    fetchTeams();
+  }, []);
+
+  const fetchTeams = async () => {
+    try {
+      const response = await HttpUtil.post(ApiUtil.API_GET_ALL_TEAMS) as ApiResponse<Team[]>;
+      if (response.status === 200) {
+        setTeams(response.data);
+      } else {
+        message.error('获取团队列表失败');
+      }
+    } catch (error) {
+      message.error('获取团队列表失败');
+    }
   };
 
-  const handleCreateTeam = () => {
-    const newTeam = { name: `团队${String.fromCharCode(65 + teams.length)}`, members: [] };
-    setTeams([...teams, newTeam]);
+  const handleAddMember = async (teamId: number) => {
+    // TODO: Implement adding a new member to the team
+  };
+
+  const handleCreateTeam = async () => {
+    // TODO: Implement creating a new team
+  };
+
+  const getAvatarUrl = (memberId: number) => {
+    return `${ApiUtil.API_GET_AVATOR_BY_ID}?user_id=${memberId}`;
   };
 
   return (
     <div>
       <CustomButton onClick={handleCreateTeam} />
       <Row gutter={16} style={{ marginTop: '16px' }}>
-        {teams.map((team, index) => (
-          <Col key={index} span={8}>
+        {teams.map((team) => (
+          <Col key={team.team_id} span={8}>
             <TeamCard
-              teamName={team.name}
-              members={team.members}
-              onAddMember={() => handleAddMember(index)}
+              teamName={team.team_name}
+              members={team.members.map((member) => ({
+                name: `Member ${member.member_id}`,
+                avatar: getAvatarUrl(member.member_id),
+              }))}
+              onAddMember={() => handleAddMember(team.team_id)}
             />
           </Col>
         ))}

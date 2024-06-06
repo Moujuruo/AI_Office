@@ -111,6 +111,17 @@ def get_user_avatar(username):
     except Exception as e:
         return {"status": 500, "message": f"数据库错误: {e}"}
     
+def get_user_avatar_by_id(id):
+    try:
+        cursor.execute("SELECT avatar FROM users WHERE id = ?", (id,))
+        result = cursor.fetchone()
+        if result:
+            return {"status": 200, "avatar": result[0]}
+        else:
+            return {"status": 404, "message": "用户不存在"}
+    except Exception as e:
+        return {"status": 500, "message": f"数据库错误: {e}"}
+    
 def change_user_status(userID, status):
     try:
         cursor.execute("UPDATE users SET status = ? WHERE id = ?", (status, userID))

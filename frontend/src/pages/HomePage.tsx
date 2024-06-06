@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { ProChat } from '@ant-design/pro-chat';
+import { ProChat, ProChatProvider, useProChat } from '@ant-design/pro-chat';
 import HttpUtil from '../utils/HttpUtil';
 import ApiUtil from '../utils/ApiUtil';
 import { XfVoiceDictation } from '@muguilin/xf-voice-dictation';
@@ -16,7 +16,11 @@ const Homepage: React.FC = () => {
     const handleRequest = async (messages: any) => {
         try {
             const content = messages.map((msg: any) => msg.content).join('\n');
-            const response = await HttpUtil.post(ApiUtil.API_AI_CHAT, { content }) as ApiResponse<any>;
+            const response = await HttpUtil.post(ApiUtil.API_AI_CHAT, 
+                { 
+                    content,
+                    userID: localStorage.getItem('userID') 
+                }) as ApiResponse<any>;
             if (response.status !== 200) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -67,6 +71,7 @@ const Homepage: React.FC = () => {
                     helloMessage={'欢迎使用协时通，我是你的智能AI助手！'}
                     request={handleRequest}
                 />
+                
                 <button onClick={handleVoiceButtonClick}>开始语音识别</button>
                 <button onClick={handleVoiceStopButtonClick}>结束语音识别</button>
             </div>

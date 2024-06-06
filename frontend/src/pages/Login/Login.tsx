@@ -48,8 +48,7 @@ const Login: React.FC = () => {
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <div style={{ width: 400, padding: 24, border: '1px solid #ddd', borderRadius: 8 }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <GithubOutlined style={{ fontSize: 48 }} />
-          <h1>协时通</h1>
+          <img src={"./assets/logo.png"} alt="logo" style={{ width: 220, height: 80, marginBottom: -10 }} />
           <h2>全球最大的智能办公平台</h2>
         </div>
         <ProForm onFinish={onFinish} submitter={{
