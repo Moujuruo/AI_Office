@@ -146,28 +146,32 @@ class TodoList extends React.Component<{}, TodoListState> {
     }
 
     getData = () => {
-        HttpUtil.get(ApiUtil.API_Activity_LIST + localStorage.getItem('userID'))
-            .then(async (response) => {
-                const activityList = response as TodoActivity[];
-                const activityListWithItems = await Promise.all(activityList.map(async (activity) => {
-                    const items = await this.getItemsByActivity(activity.ActivityID);
-                    return { ...activity, items };
-                }));
-                const activityListWithKeys = activityList.map((item, index) => ({
-                                    ...item,
-                                    key: item.UserID || index,
-                                }));
-                console.log("activityListWithItems", activityListWithItems);
-                console.log("activityListWithKeys", activityListWithKeys);
-                this.searchData = activityListWithItems; // 保存所有数据以供搜索使用
-                this.setState({
-                    data: activityListWithItems,
-                    showInfoDialog: false,
-                });
-            })
-            .catch(error => {
-                message.error(error.message);
+        HttpUtil.get(ApiUtil.API_Activity_LIST + localStorage.getItem("userID"))
+          .then(async (response) => {
+            const activityList = response as TodoActivity[];
+            const activityListWithItems = await Promise.all(
+              activityList.map(async (activity) => {
+                const items = await this.getItemsByActivity(
+                  activity.ActivityID
+                );
+                return { ...activity, items };
+              })
+            );
+            const activityListWithKeys = activityList.map((item, index) => ({
+              ...item,
+              key: item.UserID || index,
+            }));
+            console.log("activityListWithItems", activityListWithItems);
+            console.log("activityListWithKeys", activityListWithKeys);
+            this.searchData = activityListWithItems; // 保存所有数据以供搜索使用
+            this.setState({
+              data: activityListWithItems,
+              showInfoDialog: false,
             });
+          })
+          .catch((error) => {
+            message.error(error.message);
+          });
     };
 
     getItemsByActivity = async (activityID: number) => {

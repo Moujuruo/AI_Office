@@ -1,0 +1,4 @@
+.my-editor .ql-editor p {
+  margin: 10px 0; /* 调整这个值来改变行间距 */
+  font-size: 14px;
+}
