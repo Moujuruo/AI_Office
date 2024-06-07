@@ -118,7 +118,7 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
     try {
       const newReservation = {
         room_id: values.room_id,
-        user_id: localStorage.getItem('user_id') || 1, // Assuming user_id is stored in localStorage or a default value
+        user_id: localStorage.getItem('userID') || 1, // Assuming user_id is stored in localStorage or a default value
         start_time: moment().startOf('day').add(values.time[0], 'hours').format('HH:mm'),
         end_time: moment().startOf('day').add(values.time[1], 'hours').format('HH:mm'),
         date: values.date.format('YYYY-MM-DD'),

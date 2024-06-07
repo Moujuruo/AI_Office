@@ -5,6 +5,7 @@ from flask_cors import CORS
 import json
 import SqliteUtil as DBUtil
 import sqlite_roombooking as RBooking
+import sqlite_note as RNote
 import sqlite_team as Team
 from werkzeug.utils import secure_filename
 import os
@@ -131,11 +132,17 @@ def uploaded_file(filename):
 def assets_file(filename):
     return send_from_directory("../assets", filename)
 
-@app.route(apiPrefix + 'getAvatarById', methods=['POST'])
+@app.route(apiPrefix + 'getAvatarById', methods=['GET'])
 def getAvatarById():
-    data = request.get_json()
-    result = DBUtil.get_user_avatar_by_id(data['userID'])
-    return jsonify({'status': 200, 'message': 'success', 'data': result}), 200
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'status': 400, 'message': 'user_id is required'}), 400
+
+    result = DBUtil.get_user_avatar_by_id(user_id)
+    if result:
+        return jsonify({'status': 200, 'message': 'success', 'data': result}), 200
+    else:
+        return jsonify({'status': 404, 'message': 'User not found'}), 404
 
 ##################  TodoActivity接口  ##################
 @app.route(apiPrefix + 'updateActivity', methods=['POST'])
@@ -155,7 +162,8 @@ def insertActivity():
             }
         return json.dumps(re)
     except Exception as e:
-        return json.dumps({'code': 1, 'message': str(e)}), 500
+        return json.dumps({'code': -4, 'message': str(e)}), 500
+        return json.dumps({'code': -4, 'message': str(e)}), 500
 
 @app.route(apiPrefix + 'getActivityList/<int:job>')
 def getActivityList(job):
@@ -397,6 +405,7 @@ def getAIResult():
 ############ team接口 ############
 @app.route(apiPrefix + 'getAllTeams', methods=['POST'])
 def getAllTeams(): 
+
     data = request.get_json()
     userID = data['userID']
     
@@ -430,7 +439,104 @@ def getAllTeams():
     # return jsonify({'code': 0, 'message': '获取团队列表成功', 'status': 200, 'data': result}), 200
     return jsonify({'code': 0, 'message': '获取团队列表成功', 'status': 200, 'data': team_list}), 200
 
+# insertTeam
+@app.route(apiPrefix + 'insertTeam', methods=['POST'])
+def insertTeam():
+    data = request.get_json()
+    userID = data['userID']
+    teamName = data['teamName']
 
+    result = Team.insertTeam(teamName, userID)
+    if result is False:
+        return jsonify({"error": "Failed to insert team", "status": 500}), 500
+    return jsonify({"message": "Team created successfully", "status": 200}), 200
+
+# inviteMember
+@app.route(apiPrefix + 'inviteMember', methods=['POST'])
+def inviteMember():
+    data = request.get_json()
+    teamID = data['teamID']
+    membername = data['member_name']
+    memberID = DBUtil.get_user_ID(membername)
+    if memberID["status"] == 404:
+        return jsonify({"data": "Member not found", "status": 404}), 404
+
+    member_status = DBUtil.get_user_status(memberID)
+    if member_status["status"] == 404:
+        return jsonify({"data": "Member not found", "status": 404}), 404
+    if member_status["message"] == 0:
+        return jsonify({"data": "成员不在线", "status": 400}), 400
+
+    result = Team.insertTeamInvitation(teamID, memberID["id"])
+    if result is False:
+        return jsonify({"data": "Failed to invite member", "status": 500}), 500
+    return jsonify({"data": "Member invited successfully", "status": 200}), 200
+
+# getBeInvitedTeams
+@app.route(apiPrefix + 'getBeInvitedTeams', methods=['POST'])
+def getBeInvitedTeams():
+    data = request.get_json()
+    userID = data['userID']
+    result = Team.search_in_team_invitation(userID)
+    if result is False:
+        return jsonify({"data": "Failed to get team list", "status": 500}), 500
+    key = ['team_id', 'user_id', 'captain_id']
+    # captain_id 要通过result中的team_id去查询get_team_captatin
+    # result每个元组的第一个元素是team_id
+    for i in range(len(result)):
+        result[i] = [result[i][0], result[i][1], Team.get_team_captain(result[i][0])[0]]
+    result = list(map(lambda x: dict(zip(key, x)), result))
+    return jsonify({"data": result, "status": 200}), 200
+
+    # return jsonify({"data": result, "status": 200}), 200
+
+
+##################  Note接口  ##################
+@app.route(apiPrefix + 'updateNote', methods=['POST'])
+def insertNote():
+    data = request.get_json()
+    note_title = data.get('title')
+    note_content = data.get('content')
+    user_id = data.get('userName')
+    
+    existing_note = RNote.getNoteByTitle(note_title, user_id)
+    if existing_note:
+        result = RNote.updateNote(note_title, note_content, user_id)
+    else:
+        result = RNote.insertNote(note_title, note_content, user_id)
+    return jsonify(result), result['status']
+
+@app.route(apiPrefix + 'getNoteList/<user>')
+def getNoteList(user):
+    try:
+        array = RNote.getNoteTitleList(user)
+        response = {
+           'status': 200,
+           'data': array
+        }
+        return json.dumps(response)
+    except Exception as e:
+        return json.dumps({'status': 500, 'data': None})
+
+@app.route(apiPrefix + 'getNoteContent/<user>/<title>')
+def getNoteContent(user, title):
+    try:
+        content = RNote.getNoteContent(user, title);
+        response = {
+           'status': 200,
+           'data': content
+        }
+        return json.dumps(response)
+    except Exception as e:
+        return json.dumps({'status': 500, 'data': None})
+
+@app.route(apiPrefix + 'deleteNote/<user>/<title>')
+def deleteNoteByTitle(user, title):
+    try:
+        RNote.deleteNoteByTitle(user, title)
+        return json.dumps({'status': 200, 'data': None})
+    except Exception as e:
+        return json.dumps({'status': 500, 'data': None})
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)

@@ -1,3 +1,7 @@
+export interface ApiResponse<T> {
+    status: number;
+    data: T;
+}
 export default class ApiUtil {
     static URL_IP = 'http://127.0.0.1:5001';
     static URL_ROOT = '/api/v1';
@@ -13,6 +17,10 @@ export default class ApiUtil {
     static API_Item_DELETE = ApiUtil.URL_ROOT + '/deleteItem/';
     static API_Item_LIST_BY_ACTIVITY = ApiUtil.URL_ROOT + '/getItemListByActivity/';
 
+    static API_NOTE_UPDATE = ApiUtil.URL_ROOT + '/updateNote';
+    static API_NOTE_LIST = ApiUtil.URL_ROOT + '/getNoteList/';
+    static API_NOTE_CONTENT = ApiUtil.URL_ROOT + '/getNoteContent/';
+    static API_NOTE_DELETE = ApiUtil.URL_ROOT + '/deleteNote/';
 
     static API_LOGIN = ApiUtil.URL_ROOT + '/login';
     static API_REGISTER = ApiUtil.URL_ROOT + '/register';
@@ -34,7 +42,8 @@ export default class ApiUtil {
     static API_AI_CHAT
     = ApiUtil.URL_ROOT + '/aiChat';
 
-    static API_GET_ALL_TEAMS
-    = ApiUtil.URL_ROOT + '/getAllTeams';
-
+    static API_GET_ALL_TEAMS = ApiUtil.URL_ROOT + '/getAllTeams';
+    static API_INSERT_TEAM = ApiUtil.URL_ROOT + '/insertTeam';
+    static API_INVITE_MEMBER = ApiUtil.URL_ROOT + '/inviteMember';
+    static API_GET_BE_INVITED_TEAMS = ApiUtil.URL_ROOT + '/getBeInvitedTeams';
 }

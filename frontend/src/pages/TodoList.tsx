@@ -1,7 +1,7 @@
 import React from 'react';
 import { Layout, Button,Input, message, Modal, Collapse } from 'antd';
 import { ProTable, ProColumns } from '@ant-design/pro-components';
-import {EditOutlined, CloseOutlined, PlusOutlined, SearchOutlined} from '@ant-design/icons';
+import {EditOutlined, CloseOutlined, PlusOutlined, SearchOutlined, AppstoreAddOutlined } from '@ant-design/icons';
 import InfoDialog from './InfoDialog';
 import AddItemDialog from './AddItemDialog';
 import HttpUtil from '../utils/HttpUtil';
@@ -146,28 +146,32 @@ class TodoList extends React.Component<{}, TodoListState> {
     }
 
     getData = () => {
-        HttpUtil.get(ApiUtil.API_Activity_LIST + localStorage.getItem('userID'))
-            .then(async (response) => {
-                const activityList = response as TodoActivity[];
-                const activityListWithItems = await Promise.all(activityList.map(async (activity) => {
-                    const items = await this.getItemsByActivity(activity.ActivityID);
-                    return { ...activity, items };
-                }));
-                const activityListWithKeys = activityList.map((item, index) => ({
-                                    ...item,
-                                    key: item.UserID || index,
-                                }));
-                console.log("activityListWithItems", activityListWithItems);
-                console.log("activityListWithKeys", activityListWithKeys);
-                this.searchData = activityListWithItems; // 保存所有数据以供搜索使用
-                this.setState({
-                    data: activityListWithItems,
-                    showInfoDialog: false,
-                });
-            })
-            .catch(error => {
-                message.error(error.message);
+        HttpUtil.get(ApiUtil.API_Activity_LIST + localStorage.getItem("userID"))
+          .then(async (response) => {
+            const activityList = response as TodoActivity[];
+            const activityListWithItems = await Promise.all(
+              activityList.map(async (activity) => {
+                const items = await this.getItemsByActivity(
+                  activity.ActivityID
+                );
+                return { ...activity, items };
+              })
+            );
+            const activityListWithKeys = activityList.map((item, index) => ({
+              ...item,
+              key: item.UserID || index,
+            }));
+            console.log("activityListWithItems", activityListWithItems);
+            console.log("activityListWithKeys", activityListWithKeys);
+            this.searchData = activityListWithItems; // 保存所有数据以供搜索使用
+            this.setState({
+              data: activityListWithItems,
+              showInfoDialog: false,
             });
+          })
+          .catch((error) => {
+            message.error(error.message);
+          });
     };
 
     getItemsByActivity = async (activityID: number) => {
@@ -340,72 +344,98 @@ class TodoList extends React.Component<{}, TodoListState> {
         // const columns = this.state.showAdmin ? [...this.columns, this.admin_item] : this.columns;
         const columns = [...this.columns, this.admin_item]
         return (
-            <Layout>
-                <Content>
-
-                    <div style={{ background: '#fff', padding: 24, minHeight: 480 }}>
-                        <Search
-                            placeholder="搜索活动或事项"
-                            onSearch={this.handleSearch}
-                            enterButton={<SearchOutlined />}
-                            style={{ width: 200, marginRight: 16 }}
-                        />
-                        <Button onClick={this.showAllData}>
+          <Layout>
+            <Content>
+              <div
+                style={{
+                    minHeight: 700,
+                  background: "#ffffff",
+                  borderRadius: 10,
+                  boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+                }}
+              >
+                <div style={{ paddingTop: 20, marginLeft: 20 }}>
+                  <Search
+                    placeholder="搜索活动或事项"
+                    onSearch={this.handleSearch}
+                    enterButton={<SearchOutlined />}
+                    style={{ width: 200, marginRight: 16 }}
+                  />
+                  {/* <Button 
+                        ghost
+                        onClick={this.showAllData}
+                        type="primary"
+                        >
                             显示全部
-                        </Button>
-                        <Button style={{ position: "absolute", right: "70px", top: "20px",}} onClick={() => this.showUpdateDialog()}>
-                            添加
-                        </Button>
+                        </Button> */}
+                  <Button
+                    type="primary"
+                    style={{}}
+                    onClick={() => this.showUpdateDialog()}
+                    icon={<AppstoreAddOutlined />}
+                  >
+                    添加
+                  </Button>
+                </div>
 
-                        <InfoDialog
-                            visible={this.state.showInfoDialog}
-                            afterClose={() => this.setState({ showInfoDialog: false })}
-                            onSave={this.handleSave}
-                            editingItem={this.state.editingItem}
-                        />
-                        
-                        <AddItemDialog
-                            visible={this.state.showAddItemDialog}
-                            onCancel={() => this.setState({ showAddItemDialog: false })}
-                            onAdd={this.handleAddItem}
-                            activityId={this.state.currentActivity?.ActivityID || 0}
-                            ItemId = {this.state.currentItem?.ItemID || 0}
-                            editingItem={this.state.currentItem || null}
-                        />
+                <InfoDialog
+                  visible={this.state.showInfoDialog}
+                  afterClose={() => this.setState({ showInfoDialog: false })}
+                  onSave={this.handleSave}
+                  editingItem={this.state.editingItem}
+                />
 
+                <AddItemDialog
+                  visible={this.state.showAddItemDialog}
+                  onCancel={() => this.setState({ showAddItemDialog: false })}
+                  onAdd={this.handleAddItem}
+                  activityId={this.state.currentActivity?.ActivityID || 0}
+                  ItemId={this.state.currentItem?.ItemID || 0}
+                  editingItem={this.state.currentItem || null}
+                />
+                <div style={{ margin: "20px 0" }} />
 
-                        <ProTable<TodoActivity>
-                            columns={columns}
-                            dataSource={this.state.data}
-                            rowKey="key"
-                            pagination={{ pageSize: 20 }}
-                            scroll={{ y: 340 }}
-                            search={false}
-                            options={false}
-                        />
+                <ProTable<TodoActivity>
+                  columns={columns}
+                  dataSource={this.state.data}
+                  style={{ padding: 0 }}
+                  rowKey="key"
+                  pagination={{ pageSize: 20 }}
+                  //   scroll={{ y: 340 }}
+                  search={false}
+                  options={false}
+                />
 
-                        <Collapse>
-                            {this.state.data.map(activity => (
-                                <Panel header={activity.ActivityName} key={activity.ActivityID}>
-                                    <p>开始时间: {`${activity.ActivityBeginDate} ${activity.ActivityBeginTime}`}</p>
-                                    <p>结束时间: {`${activity.ActivityEndDate} ${activity.ActivityEndTime}`}</p>
-                                    {this.renderItems(activity.items)}
-                                </Panel>
-                            ))}
-                        </Collapse>
+                <div style={{marginLeft:20, marginRight:20}}>
+                  <Collapse>
+                    {this.state.data.map((activity) => (
+                      <Panel
+                        header={activity.ActivityName}
+                        key={activity.ActivityID}
+                      >
+                        <p>
+                          开始时间:{" "}
+                          {`${activity.ActivityBeginDate} ${activity.ActivityBeginTime}`}
+                        </p>
+                        <p>
+                          结束时间:{" "}
+                          {`${activity.ActivityEndDate} ${activity.ActivityEndTime}`}
+                        </p>
+                        {this.renderItems(activity.items)}
+                      </Panel>
+                    ))}
+                  </Collapse>
+                </div>
 
-                        
-
-                        {/* <div style={{ position: "absolute", left: "10px", bottom: "10px" }}>
+                {/* <div style={{ position: "absolute", left: "10px", bottom: "10px" }}>
                             <a onClick={this.gotoAdmin}>管理员</a>
                         </div>
                         <div style={{ position: "absolute", left: "70px", bottom: "10px", display: this.state.show_back }}>
                             <a onClick={this.onBack}>返回</a>
                         </div> */}
-
-                    </div>
-                </Content>
-            </Layout>
+              </div>
+            </Content>
+          </Layout>
         );
     }
 }

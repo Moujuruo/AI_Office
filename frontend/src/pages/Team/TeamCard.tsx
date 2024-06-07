@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Avatar, Button } from 'antd';
-import { UserAddOutlined } from '@ant-design/icons';
+import { UserAddOutlined, UserOutlined } from '@ant-design/icons';
 
 interface TeamCardProps {
   teamName: string;
@@ -17,7 +17,13 @@ const TeamCard: React.FC<TeamCardProps> = ({ teamName, members, onAddMember }) =
     >
       <div style={{ display: 'flex', alignItems: 'center' }}>
         {members.map((member, index) => (
-          <Avatar key={index} src={member.avatar} style={{ marginRight: 8 }} />
+          <div key={index} style={{ marginRight: 8 }}>
+            {member.avatar ? (
+              <img src={member.avatar} alt="avatar" style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
+            ) : (
+              <UserOutlined style={{ fontSize: '24px' }} />
+            )}
+          </div>
         ))}
         <Button type="dashed" shape="circle" icon={<UserAddOutlined />} onClick={onAddMember} />
       </div>
