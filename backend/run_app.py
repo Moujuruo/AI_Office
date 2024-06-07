@@ -472,6 +472,23 @@ def inviteMember():
         return jsonify({"data": "Failed to invite member", "status": 500}), 500
     return jsonify({"data": "Member invited successfully", "status": 200}), 200
 
+# getBeInvitedTeams
+@app.route(apiPrefix + 'getBeInvitedTeams', methods=['POST'])
+def getBeInvitedTeams():
+    data = request.get_json()
+    userID = data['userID']
+    result = Team.search_in_team_invitation(userID)
+    if result is False:
+        return jsonify({"data": "Failed to get team list", "status": 500}), 500
+    key = ['team_id', 'user_id', 'captain_id']
+    # captain_id 要通过result中的team_id去查询get_team_captatin
+    # result每个元组的第一个元素是team_id
+    for i in range(len(result)):
+        result[i] = [result[i][0], result[i][1], Team.get_team_captain(result[i][0])[0]]
+    result = list(map(lambda x: dict(zip(key, x)), result))
+    return jsonify({"data": result, "status": 200}), 200
+
+    # return jsonify({"data": result, "status": 200}), 200
 
 
 ##################  Note接口  ##################
