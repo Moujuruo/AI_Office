@@ -7,6 +7,7 @@ import HttpUtil from '../../utils/HttpUtil';
 import ApiUtil from '../../utils/ApiUtil';
 import RoomInfoTooltip from './RoomInfoToolTip';
 import MyReservationsModal from './MyReservation';
+import { scryRenderedDOMComponentsWithClass } from 'react-dom/test-utils';
 
 const { Search } = Input;
 
@@ -31,6 +32,8 @@ interface Reservation {
     subject: string;
 }
 
+const iconlist = ["🛖", "📱", "💻", "🏠", "🏪", "🏯", "🏫", "🏬", "🏭", "🛞"]
+
 const RoomBooking = () => {
     const [selectedDate, setSelectedDate] = useState(moment());
     const [filteredRooms, setFilteredRooms] = useState<Room[]>([]);
@@ -53,18 +56,22 @@ const RoomBooking = () => {
     }, [selectedDate]);
 
     const fetchRooms = async (value = '') => {
-        try {
-            const response = await HttpUtil.post(ApiUtil.API_GET_ALL_ROOMS, { search: value }) as ApiResponse<Room[]>;
-            console.log(response);
-            if (response.status === 200) {
-                setRooms(response.data);
-                setFilteredRooms(response.data);
-            } else {
-                message.error('获取会议室信息失败');
-            }
-        } catch (error) {
-            message.error('获取会议室信息失败');
-        }
+  try {
+    let response = await HttpUtil.post(ApiUtil.API_GET_ALL_ROOMS, { search: value }) as ApiResponse<Room[]>;
+    console.log(response);
+    if (response.status === 200) {
+        const updatedRooms = response.data.map((room, index) => {
+            const randomIcon = iconlist[index % iconlist.length];
+            return { ...room, name: randomIcon + " " + room.name };
+        });
+        setRooms(updatedRooms);
+        setFilteredRooms(updatedRooms);
+    } else {
+        message.error('获取会议室信息失败');
+    }
+} catch (error) {
+    message.error('获取会议室信息失败');
+}
     };
 
     const fetchReservations = async (date: string) => {
@@ -175,10 +182,13 @@ const RoomBooking = () => {
                             left: `calc(${startOffset * 100 / 15}%)`,
                             width: `calc(${duration * 100 / 15}%)`,
                             height: '100%',
-                            backgroundColor: 'yellow',
+                            backgroundColor: '#1890ff',
+                            borderColor: '#000000',
+                            // backgroundColor: '#000000',
                             opacity: 0.7,
-                            border: '1px solid #ccc',
-                            boxSizing: 'border-box'
+                            border: '1px solid',
+                            boxSizing: 'border-box',
+                            color: '#000000'
                         }}
                     >
                         已预约
@@ -198,64 +208,155 @@ const RoomBooking = () => {
     const paginatedRooms = filteredRooms.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
     return (
-        <div>
-            <div style={{ marginBottom: 16 }}>
-                <Button onClick={handlePreviousDay} icon={<LeftOutlined />} />
-                <DatePicker value={selectedDate} onChange={handleDateChange} />
-                <Button onClick={handleNextDay} icon={<RightOutlined />} />
-                <Search placeholder="请输入关键字" onSearch={handleSearch} style={{ width: 200, marginLeft: 16 }} />
-                <Input placeholder="容纳人数" type="number" onChange={handleCapacityChange} style={{ width: 100, marginLeft: 16 }} />
-                <Input placeholder="楼层" type="number" onChange={handleFloorChange} style={{ width: 100, marginLeft: 16 }} />
-                <Button onClick={handleRefresh} icon={<ReloadOutlined />} style={{ marginLeft: 16 }} />
-                <Button type="primary" onClick={handleCreateReservation} style={{ marginLeft: 16 }}>创建预约</Button>
-                <Button onClick={handleMyReservationsClick} style={{ marginLeft: 16 }}>我的预约</Button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', overflowX: 'auto' }} ref={scrollRef}>
-                <div style={{ display: 'flex', flexDirection: 'row', marginBottom: 16 }}>
-                    <div style={{ width: '150px' }}></div>
-                    <div style={{ display: 'flex', flexDirection: 'row', flex: '1' }}>
-                        {renderTimeSlots()}
-                    </div>
-                </div>
-                {paginatedRooms.map(room => (
-                    <div key={room.id} style={{ display: 'flex', flexDirection: 'row', marginBottom: 16 }}>
-                        <div style={{ width: '150px', textAlign: 'center', lineHeight: '50px', border: '1px solid #ccc', borderRight: 'none', }}>
-                        <RoomInfoTooltip room={room} reservations={reservations} selectedDate={selectedDate} />
-                        </div>
-                        <div style={{ position: 'relative', width: 'calc(100% - 150px)', border: '1px solid #ccc', height: '50px' }}>
-                        {renderReservations(room)}
-                        {Array.from({ length: 15 }, (_, hour) => (
-                            <div key={hour} style={{ position: 'absolute', left: `calc(${hour * 100 / 15}% )`, height: '50px', width: 'calc(100% / 15)', borderLeft: '1px solid #ccc' }}>
-                            </div>
-                        ))}
-                        </div>
-                    </div>
-                    ))}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-                <Pagination
-                current={currentPage}
-                pageSize={pageSize}
-                total={filteredRooms.length}
-                onChange={handlePageChange}
-                showSizeChanger
-                />
-            </div>  
-            <ReservationModal
-                visible={modalVisible}
-                onOk={handleModalOk}
-                onCancel={handleModalCancel}
-                form={form}
-                meetingRooms={filteredRooms}
-                fetchReservations={fetchReservations}
-                reservations={reservations}
-            />
-            <MyReservationsModal 
-                visible={myReservationsModalVisible}
-                onCancel={handleMyReservationsCancel}
-                fetchReservations={fetchReservations}
-            />
+      <div
+        style={{
+            minHeight:700,
+          background: "#ffffff",
+          borderRadius: 10,
+          boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+          paddingTop:20,
+          paddingLeft:20,
+          paddingRight:20
+        }}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <Button onClick={handlePreviousDay} icon={<LeftOutlined />} />
+          <DatePicker value={selectedDate} onChange={handleDateChange} />
+          <Button onClick={handleNextDay} icon={<RightOutlined />} />
+          <Search
+            placeholder="请输入关键字"
+            onSearch={handleSearch}
+            style={{ width: 200, marginLeft: 16 }}
+          />
+          <Input
+            placeholder="容纳人数"
+            type="number"
+            onChange={handleCapacityChange}
+            style={{ width: 100, marginLeft: 16 }}
+          />
+          <Input
+            placeholder="楼层"
+            type="number"
+            onChange={handleFloorChange}
+            style={{ width: 100, marginLeft: 16 }}
+          />
+          <Button
+            onClick={handleRefresh}
+            icon={<ReloadOutlined />}
+            style={{ marginLeft: 16 }}
+          />
+          <Button
+            type="primary"
+            onClick={handleCreateReservation}
+            style={{ marginLeft: 16 }}
+          >
+            创建预约
+          </Button>
+          <Button
+            onClick={handleMyReservationsClick}
+            style={{ marginLeft: 16 }}
+          >
+            我的预约
+          </Button>
         </div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            overflowX: "auto",
+          }}
+          ref={scrollRef}
+        >
+          <div
+            style={{ display: "flex", flexDirection: "row", marginBottom: 16 }}
+          >
+            <div style={{ width: "150px" }}></div>
+            <div style={{ display: "flex", flexDirection: "row", flex: "1" }}>
+              {renderTimeSlots()}
+            </div>
+          </div>
+          {paginatedRooms.map((room) => (
+            <div
+              key={room.id}
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  width: "150px",
+                  textAlign: "center",
+                  lineHeight: "50px",
+                  border: "1px solid",
+                  borderRight: "none",
+                  borderTopLeftRadius: 5,
+                  borderBottomLeftRadius: 5,
+                background:"#f0f5ff",
+                borderColor:"#ffffff",
+                }}
+              >
+                <RoomInfoTooltip
+                  room={room}
+                  reservations={reservations}
+                  selectedDate={selectedDate}
+                />
+              </div>
+              <div
+                style={{
+                  position: "relative",
+                  width: "calc(100% - 150px)",
+                  border: "1px solid",
+                  borderColor: "#ffffff",
+                  height: "50px",
+                }}
+              >
+                {renderReservations(room)}
+                {Array.from({ length: 15 }, (_, hour) => (
+                  <div
+                    key={hour}
+                    style={{
+                      position: "absolute",
+                      left: `calc(${(hour * 100) / 15}% )`,
+                      height: "50px",
+                      width: "calc(100% / 15)",
+                      borderLeft: "1px solid",
+                      borderColor: "#ffffff"
+                      
+                    }}
+                  ></div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div
+          style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}
+        >
+          <Pagination
+            current={currentPage}
+            pageSize={pageSize}
+            total={filteredRooms.length}
+            onChange={handlePageChange}
+            showSizeChanger
+          />
+        </div>
+        <ReservationModal
+          visible={modalVisible}
+          onOk={handleModalOk}
+          onCancel={handleModalCancel}
+          form={form}
+          meetingRooms={filteredRooms}
+          fetchReservations={fetchReservations}
+          reservations={reservations}
+        />
+        <MyReservationsModal
+          visible={myReservationsModalVisible}
+          onCancel={handleMyReservationsCancel}
+          fetchReservations={fetchReservations}
+        />
+      </div>
     );
 };
     

@@ -64,18 +64,26 @@ const Homepage: React.FC = () => {
     };
 
     return (
-        <div>
-            <h2>协时通：智能办公平台</h2>
-            <div style={{ height: '500px' }}>
-                <ProChat
-                    helloMessage={'欢迎使用协时通，我是你的智能AI助手！'}
-                    request={handleRequest}
-                />
-                
-                <button onClick={handleVoiceButtonClick}>开始语音识别</button>
-                <button onClick={handleVoiceStopButtonClick}>结束语音识别</button>
-            </div>
+      <div>
+        <div
+          style={{
+            background: "#ffffff",
+            borderRadius: 10,
+            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          <div style={{ height: "400px" }}>
+            <ProChat
+              helloMessage={"欢迎使用协时通，我是你的智能AI助手！"}
+              request={handleRequest}
+            //   inputAreaRender={() => null}
+            />
+
+            {/* <button onClick={handleVoiceButtonClick}>开始语音识别</button>
+                <button onClick={handleVoiceStopButtonClick}>结束语音识别</button> */}
+          </div>
         </div>
+      </div>
     );
 };
 

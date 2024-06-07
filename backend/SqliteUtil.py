@@ -9,7 +9,7 @@ db_name = 'Ai_work'
 
 lock_threading = threading.Lock()
 
-conn = sqlite3.connect(db_name + '.db', check_same_thread=False)
+conn = sqlite3.connect(db_name + '.db', check_same_thread=Fallse)
 # conn.execute("PRAGMA foreign_keys = ON")  # 启用外键支持
 cursor = conn.cursor()
 
