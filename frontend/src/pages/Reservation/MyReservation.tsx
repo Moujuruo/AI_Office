@@ -4,11 +4,7 @@ import moment from 'moment';
 import dayjs from 'dayjs';
 import HttpUtil from '../../utils/HttpUtil';
 import ApiUtil from '../../utils/ApiUtil';
-
-interface ApiResponse<T> {
-  status: number;
-  data: T;
-}
+import { ApiResponse } from "../../utils/ApiUtil";
 
 interface Reservation {
   id: number;

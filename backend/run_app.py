@@ -163,6 +163,7 @@ def insertActivity():
         return json.dumps(re)
     except Exception as e:
         return json.dumps({'code': -4, 'message': str(e)}), 500
+        return json.dumps({'code': -4, 'message': str(e)}), 500
 
 @app.route(apiPrefix + 'getActivityList/<int:job>')
 def getActivityList(job):
