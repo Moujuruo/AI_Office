@@ -1,29 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Layout,
   Button,
   message,
-  Modal,
   Collapse,
   Input,
-  theme,
-  CollapseProps,
+  Radio,
+  ConfigProvider
 } from "antd";
-import { ProTable, ProColumns } from "@ant-design/pro-components";
-import {
-  CaretRightOutlined,
-  EditOutlined,
-  CloseOutlined,
-  PlusOutlined,
-} from "@ant-design/icons";
-import InfoDialog from "./InfoDialog";
-import AddItemDialog from "./AddItemDialog";
 import HttpUtil from "../utils/HttpUtil";
 import ApiUtil from "../utils/ApiUtil";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { ApiResponse } from "../utils/ApiUtil";
 import '../css/editor.css'
+import { RadioChangeEvent } from "antd/lib";
 
 const { Content } = Layout;
 const { Panel } = Collapse;
@@ -31,9 +22,9 @@ const { Panel } = Collapse;
 type State = {
   title: string;
   content: string;
+  importance: string;
   success: string | null;
   userName: string | null;
-
   noteTitles: string[];
   noteContentCache: { [key: string]: string | void };
 };
@@ -46,6 +37,7 @@ class NoteList extends React.Component<{}, State> {
   state: State = {
     title: "",
     content: "",
+    importance: "Normal",
     success: null,
     userName: localStorage.getItem("username"),
     noteTitles: [],
@@ -85,6 +77,10 @@ class NoteList extends React.Component<{}, State> {
   handleContentChange = (value: any) => {
     this.setState({ content: value });
   };
+
+  handleImportanceChange = (e: RadioChangeEvent) => {
+    this.setState({ importance: e.target.value });
+  }
 
   addContent = async (state: any, auto: boolean) => {
     const msg = message;
@@ -194,10 +190,19 @@ class NoteList extends React.Component<{}, State> {
               <Button
                 type="primary"
                 className="bg-blue-300"
+                style={{ marginRight: 20 }}
                 onClick={() => this.addContent(this.state, false)}
               >
                 保存
               </Button>
+        <Radio.Group value={this.state.importance} 
+          onChange = {this.handleImportanceChange}
+          defaultValue={"Normal"}
+        >
+          <Radio.Button value="Normal">Normal</Radio.Button>
+          <Radio.Button value="Important">Important</Radio.Button>
+          <Radio.Button value="Crucial">Crucial</Radio.Button>
+        </Radio.Group>
             </div>
             <div>
               <ReactQuill
@@ -205,7 +210,7 @@ class NoteList extends React.Component<{}, State> {
                 value={this.state.content || ""}
                 onChange={this.handleContentChange}
                 className="my-editor"
-                style={{ height: 200, marginBottom: 10, }}
+                style={{ height: 200, marginBottom: 40, }}
                 modules={{
                   toolbar: [
                     ["bold", "italic", "underline", "strike"], // toggled buttons
@@ -236,70 +241,87 @@ class NoteList extends React.Component<{}, State> {
           {this.state.noteTitles.map((title: string, index) => {
             return (
               <div>
-                <Collapse
-                  onChange={async () => {
-                    const note_content = await this.getNoteContent(title);
-                    this.setState((prevState) => ({
-                      noteContentCache: {
-                        ...prevState.noteContentCache,
-                        [title]: note_content[0],
-                      },
-                    }));
+                <ConfigProvider
+                  theme={{
+                    token: {
+                    },
+                    components: {
+                      Collapse: {
+                        // headerBg: 
+                      }
+                    },
                   }}
                 >
-                  <Panel
-                    header={
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "flex-end",
-                        }}
-                      >
-                        <span style={{ marginRight: "auto" }}>{title}</span>
-                        <Button
-                          ghost
-                          type="primary"
-                          style={{ marginLeft: 10 }}
-                          onClick={async (event) => {
-                            event.stopPropagation();
-                            const note_content = await this.getNoteContent(
-                              title
-                            );
-                            this.setState((prevState) => ({
-                              noteContentCache: {
-                                ...prevState.noteContentCache,
-                                [title]: note_content[0],
-                              },
-                            }));
-                            console.log(note_content);
-                            this.handleEditBottonClick(title, note_content);
-                          }}
-                        >
-                          编辑
-                        </Button>
-                        <Button
-                          danger
-                          style={{ marginLeft: 10 }}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            this.deleteNote(title);
-                          }}
-                        >
-                          删除
-                        </Button>
-                      </div>
-                    }
-                    key={index}
+                  <Collapse
+                    onChange={async () => {
+                      const note_content = await this.getNoteContent(title);
+                      this.setState((prevState) => ({
+                        noteContentCache: {
+                          ...prevState.noteContentCache,
+                          [title]: note_content[0],
+                        },
+                      }));
+                    }}
                   >
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html: this.state.noteContentCache[title] ?? "",
-                      }}
-                    />
-                  </Panel>
-                </Collapse>
+                    <Panel
+                      header={
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                          }}
+                        >
+                          <span
+                            style={{ fontWeight: "bold", marginRight: "auto" }}
+                          >
+                            {title}
+                          </span>
+                          <Button
+                            ghost
+                            type="primary"
+                            style={{ marginLeft: 10 }}
+                            onClick={async (event) => {
+                              event.stopPropagation();
+                              const note_content = await this.getNoteContent(
+                                title
+                              );
+                              this.setState((prevState) => ({
+                                noteContentCache: {
+                                  ...prevState.noteContentCache,
+                                  [title]: note_content[0],
+                                },
+                              }));
+                              console.log(note_content);
+                              this.handleEditBottonClick(title, note_content);
+                            }}
+                          >
+                            编辑
+                          </Button>
+                          <Button
+                            ghost
+                            danger
+                            style={{ marginLeft: 10 }}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              this.deleteNote(title);
+                            }}
+                          >
+                            删除
+                          </Button>
+                        </div>
+                      }
+                      key={index}
+                    >
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: this.state.noteContentCache[title] ?? "",
+                        }}
+                      />
+                    </Panel>
+                  </Collapse>
 
-                <div style={{ margin: "10px 0" }} />
+                  <div style={{ margin: "10px 0" }} />
+                </ConfigProvider>
               </div>
             );
           })}
