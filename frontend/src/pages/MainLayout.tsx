@@ -135,8 +135,17 @@ const MainLayout: React.FC = () => {
             logo={<div className="logo" />}
             layout="mix"
             navTheme="light"
+            token={{
+                header: {
+                    heightLayoutHeader: 80, // 调整Header的高度
+                    
+                },
+            }}
             headerRender={() => (
-                <Header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: "80px" } } >
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <img src={"./assets/logo.png"} alt="logo" style={{ width: 150, height: 60 }} />
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         {avatarUrl ? (
                             <img src={avatarUrl} alt="avatar" style={{ width: '24px', height: '24px', borderRadius: '50%', marginRight: '8px' }} />
