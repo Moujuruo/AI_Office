@@ -134,6 +134,17 @@ def get_team_info(team_id):
         return False
     finally:
         lock_threading.release()
+
+def get_team_captain(team_id):
+    try:
+        lock_threading.acquire()
+        cursor.execute('''SELECT captain_id FROM team WHERE id = ? ''', (team_id,))
+        return cursor.fetchone()
+    except sqlite3.Error as e:
+        print(e)
+        return False
+    finally:
+        lock_threading.release()
         
 def get_user_teams_with_captain_flag(user_id):
     try:
