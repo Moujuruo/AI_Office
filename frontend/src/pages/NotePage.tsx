@@ -8,6 +8,9 @@ import {
   Radio,
   ConfigProvider
 } from "antd";
+import {
+  SaveOutlined
+} from "@ant-design/icons"
 import HttpUtil from "../utils/HttpUtil";
 import ApiUtil from "../utils/ApiUtil";
 import ReactQuill from "react-quill";
@@ -15,6 +18,7 @@ import "react-quill/dist/quill.snow.css";
 import { ApiResponse } from "../utils/ApiUtil";
 import '../css/editor.css'
 import { RadioChangeEvent } from "antd/lib";
+import { TinyColor } from '@ctrl/tinycolor';
 
 const { Content } = Layout;
 const { Panel } = Collapse;
@@ -174,13 +178,30 @@ class NoteList extends React.Component<{}, State> {
       }
     });
   }
+  getColorByImportance = (importance: string) => {
+    if (importance == "Normal") {
+      return '#f0f5ff';
+    } else if (importance == "Important") {
+      return '#feffe6';
+    } else if (importance == "Crucial") {
+      return '#ffccc7';
+    }
+
+  }
 
   render() {
     return (
       <Layout>
+          <div
+            style={{
+              minHeight:700,
+              background: "#ffffff",
+              borderRadius: 10,
+              boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+            }}
+          >
         <Content>
-          <div>
-            <div>
+            <div style={{paddingTop:20, paddingLeft:20}}>
               <Input
                 placeholder="请输入笔记名称"
                 style={{ width: 200, marginRight: 10, marginBottom: 10 }}
@@ -189,28 +210,30 @@ class NoteList extends React.Component<{}, State> {
               />
               <Button
                 type="primary"
-                className="bg-blue-300"
                 style={{ marginRight: 20 }}
                 onClick={() => this.addContent(this.state, false)}
+                icon={<SaveOutlined />}
+                iconPosition="start"
               >
                 保存
               </Button>
-        <Radio.Group value={this.state.importance} 
-          onChange = {this.handleImportanceChange}
-          defaultValue={"Normal"}
-        >
-          <Radio.Button value="Normal">Normal</Radio.Button>
-          <Radio.Button value="Important">Important</Radio.Button>
-          <Radio.Button value="Crucial">Crucial</Radio.Button>
-        </Radio.Group>
+              <Radio.Group
+                value={this.state.importance}
+                onChange={this.handleImportanceChange}
+                defaultValue={"Normal"}
+              >
+                <Radio.Button value="Normal">Normal</Radio.Button>
+                <Radio.Button value="Important">Important</Radio.Button>
+                <Radio.Button value="Crucial">Crucial</Radio.Button>
+              </Radio.Group>
             </div>
-            <div>
+            <div style={{paddingLeft:20,paddingRight:20}}>
               <ReactQuill
                 theme="snow"
                 value={this.state.content || ""}
                 onChange={this.handleContentChange}
                 className="my-editor"
-                style={{ height: 200, marginBottom: 40, }}
+                style={{  marginBottom: 20 }}
                 modules={{
                   toolbar: [
                     ["bold", "italic", "underline", "strike"], // toggled buttons
@@ -234,21 +257,23 @@ class NoteList extends React.Component<{}, State> {
                 }}
               />
             </div>
-          </div>
         </Content>
         <div style={{ margin: "20px 0" }} />
         <Content>
+          <div style={{marginLeft:20, marginRight:20, marginTop:30}}>
           {this.state.noteTitles.map((title: string, index) => {
+            const importance = "Normal";
+            const importance_color = this.getColorByImportance(importance);
             return (
               <div>
                 <ConfigProvider
                   theme={{
-                    token: {
-                    },
+                    token: {},
                     components: {
                       Collapse: {
-                        // headerBg: 
-                      }
+                        colorBorder: importance_color,
+                        headerBg: importance_color
+                      },
                     },
                   }}
                 >
@@ -271,43 +296,70 @@ class NoteList extends React.Component<{}, State> {
                             justifyContent: "flex-end",
                           }}
                         >
+                          <span style={{fontSize: "normal", marginRight:10}}>🏷️ </span>
                           <span
-                            style={{ fontWeight: "bold", marginRight: "auto" }}
+                            style={{ fontWeight: "normal", marginRight: "auto" }}
                           >
                             {title}
                           </span>
-                          <Button
-                            ghost
-                            type="primary"
-                            style={{ marginLeft: 10 }}
-                            onClick={async (event) => {
-                              event.stopPropagation();
-                              const note_content = await this.getNoteContent(
-                                title
-                              );
-                              this.setState((prevState) => ({
-                                noteContentCache: {
-                                  ...prevState.noteContentCache,
-                                  [title]: note_content[0],
+                          <ConfigProvider
+                            theme={{
+                              components: {
+                                Button: {
+                                  defaultBg: '#ffffff',
+                                  defaultHoverBg:'#1677FF',
+                                  defaultColor: "#2f54eb",
+                                  defaultHoverColor: "#ffffff",
+                                  lineWidth: 0,
                                 },
-                              }));
-                              console.log(note_content);
-                              this.handleEditBottonClick(title, note_content);
+                              },
                             }}
                           >
-                            编辑
-                          </Button>
-                          <Button
-                            ghost
-                            danger
-                            style={{ marginLeft: 10 }}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              this.deleteNote(title);
+                            <Button
+                              type="default"
+                              style={{ marginLeft: 10 }}
+                              onClick={async (event) => {
+                                event.stopPropagation();
+                                const note_content = await this.getNoteContent(
+                                  title
+                                );
+                                this.setState((prevState) => ({
+                                  noteContentCache: {
+                                    ...prevState.noteContentCache,
+                                    [title]: note_content[0],
+                                  },
+                                }));
+                                console.log(note_content);
+                                this.handleEditBottonClick(title, note_content);
+                              }}
+                            >
+                              编辑
+                            </Button>
+                          </ConfigProvider>
+                          <ConfigProvider
+                            theme={{
+                              components: {
+                                Button: {
+                                  defaultBg: '#ffffff',
+                                  defaultColor: '#f5222d',
+                                  defaultHoverBg: '#ff4d4f',
+                                  defaultHoverColor: '#ffffff',
+                                  lineWidth: 0,
+                                },
+                              },
                             }}
                           >
-                            删除
-                          </Button>
+                            <Button
+                            type="default"
+                              style={{ marginLeft: 10 }}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                this.deleteNote(title);
+                              }}
+                            >
+                              删除
+                            </Button>
+                          </ConfigProvider>
                         </div>
                       }
                       key={index}
@@ -325,7 +377,9 @@ class NoteList extends React.Component<{}, State> {
               </div>
             );
           })}
+          </div>
         </Content>
+        </div>
       </Layout>
     );
   }

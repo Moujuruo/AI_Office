@@ -184,50 +184,80 @@ const MainLayout: React.FC = () => {
     ]
 
     return (
-        <ProLayout
-            title="智能办公管理系统"
-            logo={<div className="logo" />}
-            layout="mix"
-            navTheme="light"
-            token={{
-                header: {
-                    heightLayoutHeader: 80, // 调整Header的高度
-                },
+      <ProLayout
+        title="智能办公管理系统"
+        logo={<div className="logo" />}
+        layout="mix"
+        navTheme="light"
+        token={{
+          header: {
+            heightLayoutHeader: 80, // 调整Header的高度
+          },
+          sider: {
+            colorBgMenuItemSelected: "#D2E5FF",
+            colorTextMenuSelected: '#253B7D'
+          },
+        }}
+        headerRender={() => (
+          <Header
+            className="header"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              height: "80px",
             }}
-            headerRender={() => (
-                <Header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: "80px" } } >
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <img src={"./assets/logo.png"} alt="logo" style={{ width: 150, height: 60 }} />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        {avatarUrl ? (
-                            <img src={avatarUrl} alt="avatar" style={{ width: '24px', height: '24px', borderRadius: '50%', marginRight: '8px' }} />
-                        ) : (
-                            <UserOutlined style={{ fontSize: '24px', marginRight: '8px' }} />
-                        )}
-                        <span>你好, {username}</span>
-                        <Dropdown overlay={<Menu items={items} />} trigger={['click']}>
-                            <a onClick={e => e.preventDefault()} style={{ marginLeft: '8px' }}>
-                                <DownOutlined />
-                            </a>
-                        </Dropdown>
-                    </div>
-                </Header>
-            )}
-            menuItemRender={(item, dom) => <Link to={item.path || '/'}>{dom}</Link>}
-            menuDataRender={() => [
-                { path: '/', name: '首页', default: true },
-                { path: '/staff-list', name: '日程表' },
-                { path: '/notelist-page', name: '笔记备忘录' },
-                { path: '/reservation-page', name: '会议室预定' },
-                { path: '/team-page', name: '团队管理' },
-            ]}
-        >
+          >
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <img
+                src={"./assets/logo.png"}
+                alt="logo"
+                style={{ width: 150, height: 60 }}
+              />
+            </div>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="avatar"
+                  style={{
+                    width: "24px",
+                    height: "24px",
+                    borderRadius: "50%",
+                    marginRight: "8px",
+                  }}
+                />
+              ) : (
+                <UserOutlined
+                  style={{ fontSize: "24px", marginRight: "8px" }}
+                />
+              )}
+              <span>你好, {username}</span>
+              <Dropdown overlay={<Menu items={items} />} trigger={["click"]}>
+                <a
+                  onClick={(e) => e.preventDefault()}
+                  style={{ marginLeft: "8px" }}
+                >
+                  <DownOutlined />
+                </a>
+              </Dropdown>
+            </div>
+          </Header>
+        )}
+        menuItemRender={(item, dom) => <Link to={item.path || "/"}>{dom}</Link>}
+        menuDataRender={() => [
+          { path: "/", name: "🏠  首页", default: true },
+          { path: "/staff-list", name: "📆  日程表" },
+          { path: "/notelist-page", name: "📒 笔记备忘录" },
+          { path: "/reservation-page", name: "🚪  会议室预定" },
+          { path: "/team-page", name: "👨‍👩‍👧‍👦 团队管理" },
+        ]}
+      >
             {contextHolder}
-            <Content style={{ padding: '0 24px 24px' }}>
-                <Outlet />
-            </Content>
-        </ProLayout>
+        <Content style={{ padding: "0 24px 24px" }}>
+          <Outlet />
+        </Content>
+      </ProLayout>
     );
 };
 
