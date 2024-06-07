@@ -20,6 +20,7 @@ import '../css/editor.css'
 import { RadioChangeEvent } from "antd/lib";
 import { TinyColor } from '@ctrl/tinycolor';
 import dayjs from 'dayjs'
+import QueueAnim from 'rc-queue-anim';
 
 const { Content } = Layout;
 const { Panel } = Collapse;
@@ -219,90 +220,88 @@ class NoteList extends React.Component<{}, State> {
           }}
         >
           <Content>
-            <div 
-            style={{ 
-              paddingTop: 20,
-              paddingLeft: 20,
-              display:"flex",
-              justifyContent:'space-between'
-                }}>
-                  <div>
+            <div
+              style={{
+                paddingTop: 20,
+                paddingLeft: 20,
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <div>
+                <span style={{ fontSize: "Large", marginRight: 10 }}>📜 </span>
+                <Input
+                  placeholder="请输入笔记名称"
+                  style={{ width: 200, marginRight: 10, marginBottom: 10 }}
+                  value={this.state.title}
+                  onChange={this.handleTitleChange}
+                />
 
-                    <span style={{ fontSize: "Large", marginRight: 10 }}>
-                      📜{" "}
-                    </span>
-              <Input
-                placeholder="请输入笔记名称"
-                style={{ width: 200, marginRight: 10, marginBottom: 10 }}
-                value={this.state.title}
-                onChange={this.handleTitleChange}
-              />
-
-              <Radio.Group
-                value={this.state.importance}
-                onChange={this.handleImportanceChange}
-                defaultValue={"Normal"}
-                // buttonStyle="solid"
-              >
-                <ConfigProvider
-                  theme={{
-                    components: {
-                      Radio: {},
-                    },
-                  }}
+                <Radio.Group
+                  value={this.state.importance}
+                  onChange={this.handleImportanceChange}
+                  defaultValue={"Normal"}
+                  // buttonStyle="solid"
                 >
-                  <Radio.Button value="Normal">普通</Radio.Button>
-                </ConfigProvider>
-                <ConfigProvider
-                  theme={{
-                    components: {
-                      Radio: {
-                        buttonSolidCheckedBg: "#ff6f00",
-                        buttonSolidCheckedHoverBg: "#ff6f00",
-                        buttonSolidCheckedActiveBg: "#ff6f00",
-                        colorPrimary: "#ff6f00",
-                        colorPrimaryHover: "#ff6f00",
-                        colorPrimaryActive: "#ff6f00",
-                        colorPrimaryBorder: "#ff6f00",
+                  <ConfigProvider
+                    theme={{
+                      components: {
+                        Radio: {},
                       },
-                    },
-                  }}
-                >
-                  <Radio.Button value="Important">重要</Radio.Button>
-                </ConfigProvider>
-                <ConfigProvider
-                  theme={{
-                    components: {
-                      Radio: {
-                        buttonSolidCheckedBg: "#ff4d4f",
-                        buttonSolidCheckedHoverBg: "#ff4d4f",
-                        buttonSolidCheckedActiveBg: "#ff4d4f",
-                        colorPrimary: "#ff4d4f",
-                        colorPrimaryHover: "#ff4d4f",
-                        colorPrimaryActive: "#ff4d4f",
-                        colorPrimaryBorder: "#ff4d4f",
+                    }}
+                  >
+                    <Radio.Button value="Normal">普通</Radio.Button>
+                  </ConfigProvider>
+                  <ConfigProvider
+                    theme={{
+                      components: {
+                        Radio: {
+                          buttonSolidCheckedBg: "#ff6f00",
+                          buttonSolidCheckedHoverBg: "#ff6f00",
+                          buttonSolidCheckedActiveBg: "#ff6f00",
+                          colorPrimary: "#ff6f00",
+                          colorPrimaryHover: "#ff6f00",
+                          colorPrimaryActive: "#ff6f00",
+                          colorPrimaryBorder: "#ff6f00",
+                        },
                       },
-                    },
-                  }}
+                    }}
+                  >
+                    <Radio.Button value="Important">重要</Radio.Button>
+                  </ConfigProvider>
+                  <ConfigProvider
+                    theme={{
+                      components: {
+                        Radio: {
+                          buttonSolidCheckedBg: "#ff4d4f",
+                          buttonSolidCheckedHoverBg: "#ff4d4f",
+                          buttonSolidCheckedActiveBg: "#ff4d4f",
+                          colorPrimary: "#ff4d4f",
+                          colorPrimaryHover: "#ff4d4f",
+                          colorPrimaryActive: "#ff4d4f",
+                          colorPrimaryBorder: "#ff4d4f",
+                        },
+                      },
+                    }}
+                  >
+                    <Radio.Button value="Crucial">关键</Radio.Button>
+                  </ConfigProvider>
+                </Radio.Group>
+                <Button
+                  type="primary"
+                  style={{ marginLeft: 20 }}
+                  onClick={() => this.addContent(this.state, false)}
+                  icon={<SaveOutlined />}
+                  iconPosition="start"
                 >
-                  <Radio.Button value="Crucial">关键</Radio.Button>
-                </ConfigProvider>
-              </Radio.Group>
-              <Button
-                type="primary"
-                style={{ marginLeft: 20 }}
-                onClick={() => this.addContent(this.state, false)}
-                icon={<SaveOutlined />}
-                iconPosition="start"
-              >
-                保存
-              </Button>
+                  保存
+                </Button>
               </div>
               <div
                 style={{
                   color: "#aaa",
                   marginRight: 50,
-                  paddingTop:6,
+                  paddingTop: 6,
                 }}
               >
                 上次修改: {this.state.savetime}
@@ -342,142 +341,146 @@ class NoteList extends React.Component<{}, State> {
           <div style={{ margin: "20px 0" }} />
           <Content>
             <div style={{ marginLeft: 20, marginRight: 20, marginTop: 30 }}>
-              {this.state.noteTitles.map((title: string, index) => {
-                const importance = this.state.noteImportances[index];
-                const importance_color = this.getColorByImportance(importance);
-                return (
-                  <div>
-                    <ConfigProvider
-                      theme={{
-                        token: {},
-                        components: {
-                          Collapse: {
-                            colorBorder: importance_color,
-                            headerBg: importance_color,
-                          },
-                        },
-                      }}
-                    >
-                      <Collapse
-                        onChange={async () => {
-                          const note_content: string =
-                            await this.getNoteContent(title);
-                          this.setState((prevState) => ({
-                            noteContentCache: {
-                              ...prevState.noteContentCache,
-                              [title]: note_content,
+              <QueueAnim delay={300}>
+                {this.state.noteTitles.map((title: string, index) => {
+                  const importance = this.state.noteImportances[index];
+                  const importance_color =
+                    this.getColorByImportance(importance);
+                  return (
+                    <div key={index}>
+                      <ConfigProvider
+                        theme={{
+                          token: {},
+                          components: {
+                            Collapse: {
+                              colorBorder: importance_color,
+                              headerBg: importance_color,
                             },
-                          }));
+                          },
                         }}
                       >
-                        <Panel
-                          header={
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent: "flex-end",
-                              }}
-                            >
-                              <span
-                                style={{ fontSize: "Large", marginRight: 10 }}
-                              >
-                                🏷️{" "}
-                              </span>
-                              <span
-                                style={{
-                                  fontWeight: "bold",
-                                  marginRight: "auto",
-                                  paddingTop: 4,
-                                }}
-                              >
-                                {title}
-                              </span>
-                              <ConfigProvider
-                                theme={{
-                                  components: {
-                                    Button: {
-                                      defaultBg: "#ffffff",
-                                      defaultHoverBg: "#1677FF",
-                                      defaultColor: "#2f54eb",
-                                      defaultHoverColor: "#ffffff",
-                                      lineWidth: 0,
-                                    },
-                                  },
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    marginRight: 20,
-                                    paddingTop: 6,
-                                    color: "#aaa",
-                                  }}
-                                >
-                                  上次修改: {this.state.noteSaveTimes[index]}
-                                </div>
-                                <Button
-                                  type="default"
-                                  style={{ marginLeft: 10 }}
-                                  onClick={async (event) => {
-                                    event.stopPropagation();
-                                    const note_content: string =
-                                      await this.getNoteContent(title);
-                                    this.setState((prevState) => ({
-                                      noteContentCache: {
-                                        ...prevState.noteContentCache,
-                                        [title]: note_content,
-                                      },
-                                    }));
-                                    this.handleEditBottonClick(
-                                      title,
-                                      note_content,
-                                      importance
-                                    );
-                                  }}
-                                >
-                                  编辑
-                                </Button>
-                              </ConfigProvider>
-                              <ConfigProvider
-                                theme={{
-                                  components: {
-                                    Button: {
-                                      defaultBg: "#ffffff",
-                                      defaultColor: "#f5222d",
-                                      defaultHoverBg: "#ff4d4f",
-                                      defaultHoverColor: "#ffffff",
-                                      lineWidth: 0,
-                                    },
-                                  },
-                                }}
-                              >
-                                <Button
-                                  type="default"
-                                  style={{ marginLeft: 10 }}
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    this.deleteNote(title);
-                                  }}
-                                >
-                                  删除
-                                </Button>
-                              </ConfigProvider>
-                            </div>
-                          }
-                          key={index}
+                        <Collapse
+                          onChange={async () => {
+                            const note_content: string =
+                              await this.getNoteContent(title);
+                            this.setState((prevState) => ({
+                              noteContentCache: {
+                                ...prevState.noteContentCache,
+                                [title]: note_content,
+                              },
+                            }));
+                          }}
                         >
-                          <div
-                            dangerouslySetInnerHTML={{
-                              __html: this.state.noteContentCache[title] ?? "",
-                            }}
-                          />
-                        </Panel>
-                      </Collapse>
+                          <Panel
+                            header={
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "flex-end",
+                                }}
+                              >
+                                <span
+                                  style={{ fontSize: "Large", marginRight: 10 }}
+                                >
+                                  🏷️{" "}
+                                </span>
+                                <span
+                                  style={{
+                                    fontWeight: "bold",
+                                    marginRight: "auto",
+                                    paddingTop: 4,
+                                  }}
+                                >
+                                  {title}
+                                </span>
+                                <ConfigProvider
+                                  theme={{
+                                    components: {
+                                      Button: {
+                                        defaultBg: "#ffffff",
+                                        defaultHoverBg: "#1677FF",
+                                        defaultColor: "#2f54eb",
+                                        defaultHoverColor: "#ffffff",
+                                        lineWidth: 0,
+                                      },
+                                    },
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      marginRight: 20,
+                                      paddingTop: 6,
+                                      color: "#aaa",
+                                    }}
+                                  >
+                                    上次修改: {this.state.noteSaveTimes[index]}
+                                  </div>
+                                  <Button
+                                    type="default"
+                                    style={{ marginLeft: 10 }}
+                                    onClick={async (event) => {
+                                      event.stopPropagation();
+                                      const note_content: string =
+                                        await this.getNoteContent(title);
+                                      this.setState((prevState) => ({
+                                        noteContentCache: {
+                                          ...prevState.noteContentCache,
+                                          [title]: note_content,
+                                        },
+                                      }));
+                                      this.handleEditBottonClick(
+                                        title,
+                                        note_content,
+                                        importance
+                                      );
+                                    }}
+                                  >
+                                    编辑
+                                  </Button>
+                                </ConfigProvider>
+                                <ConfigProvider
+                                  theme={{
+                                    components: {
+                                      Button: {
+                                        defaultBg: "#ffffff",
+                                        defaultColor: "#f5222d",
+                                        defaultHoverBg: "#ff4d4f",
+                                        defaultHoverColor: "#ffffff",
+                                        lineWidth: 0,
+                                      },
+                                    },
+                                  }}
+                                >
+                                  <Button
+                                    type="default"
+                                    style={{ marginLeft: 10 }}
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      this.deleteNote(title);
+                                    }}
+                                  >
+                                    删除
+                                  </Button>
+                                </ConfigProvider>
+                              </div>
+                            }
+                            key={index}
+                          >
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html:
+                                  this.state.noteContentCache[title] ?? "",
+                              }}
+                            />
+                          </Panel>
+                        </Collapse>
 
-                      <div style={{ margin: "10px 0" }} />
-                    </ConfigProvider>
-                  </div>
-                );
-              })}
+                        <div style={{ margin: "10px 0" }} />
+                      </ConfigProvider>
+                    </div>
+                  );
+                })}
+              </QueueAnim>
             </div>
           </Content>
         </div>

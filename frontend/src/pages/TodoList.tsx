@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Button,Input, message, Modal, Collapse } from 'antd';
+import { Layout, Button,Input, message, Modal, Collapse, Badge} from 'antd';
 import { ProTable, ProColumns } from '@ant-design/pro-components';
 import {EditOutlined, CloseOutlined, PlusOutlined, SearchOutlined, AppstoreAddOutlined } from '@ant-design/icons';
 import InfoDialog from './InfoDialog';
@@ -64,6 +64,11 @@ class TodoList extends React.Component<{}, TodoListState> {
             title: '活动名称',
             dataIndex: 'ActivityName',
             key: 'ActivityName',
+            render: (_, record) => {
+                return (
+                    <Badge status="success" text={record.ActivityName} />
+                );
+            }
         },
         {
             title: '开始时间',
