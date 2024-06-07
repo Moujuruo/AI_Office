@@ -132,11 +132,17 @@ def uploaded_file(filename):
 def assets_file(filename):
     return send_from_directory("../assets", filename)
 
-@app.route(apiPrefix + 'getAvatarById', methods=['POST'])
+@app.route(apiPrefix + 'getAvatarById', methods=['GET'])
 def getAvatarById():
-    data = request.get_json()
-    result = DBUtil.get_user_avatar_by_id(data['userID'])
-    return jsonify({'status': 200, 'message': 'success', 'data': result}), 200
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'status': 400, 'message': 'user_id is required'}), 400
+
+    result = DBUtil.get_user_avatar_by_id(user_id)
+    if result:
+        return jsonify({'status': 200, 'message': 'success', 'data': result}), 200
+    else:
+        return jsonify({'status': 404, 'message': 'User not found'}), 404
 
 ##################  TodoActivity接口  ##################
 @app.route(apiPrefix + 'updateActivity', methods=['POST'])
@@ -398,6 +404,7 @@ def getAIResult():
 ############ team接口 ############
 @app.route(apiPrefix + 'getAllTeams', methods=['POST'])
 def getAllTeams(): 
+
     data = request.get_json()
     userID = data['userID']
     
@@ -430,6 +437,39 @@ def getAllTeams():
         team_list.append(team_info)
     # return jsonify({'code': 0, 'message': '获取团队列表成功', 'status': 200, 'data': result}), 200
     return jsonify({'code': 0, 'message': '获取团队列表成功', 'status': 200, 'data': team_list}), 200
+
+# insertTeam
+@app.route(apiPrefix + 'insertTeam', methods=['POST'])
+def insertTeam():
+    data = request.get_json()
+    userID = data['userID']
+    teamName = data['teamName']
+
+    result = Team.insertTeam(teamName, userID)
+    if result is False:
+        return jsonify({"error": "Failed to insert team", "status": 500}), 500
+    return jsonify({"message": "Team created successfully", "status": 200}), 200
+
+# inviteMember
+@app.route(apiPrefix + 'inviteMember', methods=['POST'])
+def inviteMember():
+    data = request.get_json()
+    teamID = data['teamID']
+    membername = data['member_name']
+    memberID = DBUtil.get_user_ID(membername)
+    if memberID["status"] == 404:
+        return jsonify({"data": "Member not found", "status": 404}), 404
+
+    member_status = DBUtil.get_user_status(memberID)
+    if member_status["status"] == 404:
+        return jsonify({"data": "Member not found", "status": 404}), 404
+    if member_status["message"] == 0:
+        return jsonify({"data": "成员不在线", "status": 400}), 400
+
+    result = Team.insertTeamInvitation(teamID, memberID["id"])
+    if result is False:
+        return jsonify({"data": "Failed to invite member", "status": 500}), 500
+    return jsonify({"data": "Member invited successfully", "status": 200}), 200
 
 
 

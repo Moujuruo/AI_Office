@@ -56,6 +56,7 @@ def insertTeam(team_name, captain_id):
 def insertTeamInvitation(team_id, member_id):
     try:
         lock_threading.acquire()
+        print(team_id, member_id)
         cursor.execute('''INSERT INTO team_invitation (team_id, member_id) VALUES (?, ?)''', (team_id, member_id))
         conn.commit()
         return True
@@ -167,4 +168,16 @@ def get_team_members_with_details(team_id):
         return False
     finally:
         lock_threading.release()
+
+def search_in_team_invitation(member_id):
+    try:
+        lock_threading.acquire()
+        cursor.execute('''SELECT * FROM team_invitation WHERE member_id = ?''', (member_id,))
+        return cursor.fetchall()
+    except sqlite3.Error as e:
+        print(e)
+        return False
+    finally:
+        lock_threading.release()
+        
 

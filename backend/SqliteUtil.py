@@ -3,8 +3,11 @@ import sqlite3
 import json
 import csv
 from sqlite3 import Error
+import threading
 
 db_name = 'Ai_work'
+
+lock_threading = threading.Lock()
 
 conn = sqlite3.connect(db_name + '.db', check_same_thread=False)
 # conn.execute("PRAGMA foreign_keys = ON")  # 启用外键支持
@@ -113,6 +116,7 @@ def get_user_avatar(username):
     
 def get_user_avatar_by_id(id):
     try:
+        lock_threading.acquire()
         cursor.execute("SELECT avatar FROM users WHERE id = ?", (id,))
         result = cursor.fetchone()
         if result:
@@ -121,6 +125,22 @@ def get_user_avatar_by_id(id):
             return {"status": 404, "message": "用户不存在"}
     except Exception as e:
         return {"status": 500, "message": f"数据库错误: {e}"}
+    finally:
+        lock_threading.release()
+
+def get_user_status(id):
+    try:
+        lock_threading.acquire()
+        cursor.execute("SELECT status FROM users WHERE id = ?", (id,))
+        result = cursor.fetchone()
+        if result:
+            return {"status": 200, "message": result[0]}
+        else:
+            return {"status": 404, "message": "用户不存在"}
+    except Exception as e:
+        return {"status": 500, "message": f"数据库错误: {e}"}
+    finally:
+        lock_threading.release()
     
 def change_user_status(userID, status):
     try:

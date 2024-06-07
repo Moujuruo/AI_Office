@@ -42,7 +42,8 @@ export default class ApiUtil {
     static API_AI_CHAT
     = ApiUtil.URL_ROOT + '/aiChat';
 
-    static API_GET_ALL_TEAMS
-    = ApiUtil.URL_ROOT + '/getAllTeams';
-
+    static API_GET_ALL_TEAMS = ApiUtil.URL_ROOT + '/getAllTeams';
+    static API_INSERT_TEAM = ApiUtil.URL_ROOT + '/insertTeam';
+    static API_INVITE_MEMBER = ApiUtil.URL_ROOT + '/inviteMember';
+    static API_GET_BE_INVITED_TEAMS = ApiUtil.URL_ROOT + '/getBeInvitedTeams';
 }
