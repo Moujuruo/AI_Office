@@ -247,19 +247,6 @@ class TodoList extends React.Component<{}, TodoListState> {
             });
     };
 
-    // gotoAdmin = () => {
-    //     this.setState({
-    //         showAdmin: true,
-    //         show_back: "block",
-    //     });
-    // };
-
-    // onBack = () => {
-    //     this.setState({
-    //         showAdmin: false,
-    //         show_back: "none",
-    //     });
-    // };
 
 
     renderItems = (items: TodoItem[]) => {
@@ -354,28 +341,25 @@ class TodoList extends React.Component<{}, TodoListState> {
                   boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
                 }}
               >
-                <div style={{ paddingTop: 20, marginLeft: 20 }}>
+                <div style={{ paddingTop: 20, marginLeft: 20, display:'flex', justifyContent:'space-between'}}>
+                    <div>
                   <Search
                     placeholder="搜索活动或事项"
                     onSearch={this.handleSearch}
                     enterButton={<SearchOutlined />}
                     style={{ width: 200, marginRight: 16 }}
                   />
-                  {/* <Button 
-                        ghost
-                        onClick={this.showAllData}
-                        type="primary"
-                        >
-                            显示全部
-                        </Button> */}
+                  </div>
+                    <div>
                   <Button
                     type="primary"
-                    style={{}}
+                    style={{marginRight:40}}
                     onClick={() => this.showUpdateDialog()}
                     icon={<AppstoreAddOutlined />}
                   >
                     添加
                   </Button>
+                  </div>
                 </div>
 
                 <InfoDialog

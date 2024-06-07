@@ -7,7 +7,6 @@ import HttpUtil from '../../utils/HttpUtil';
 import ApiUtil from '../../utils/ApiUtil';
 import RoomInfoTooltip from './RoomInfoToolTip';
 import MyReservationsModal from './MyReservation';
-import { scryRenderedDOMComponentsWithClass } from 'react-dom/test-utils';
 
 const { Search } = Input;
 

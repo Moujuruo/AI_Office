@@ -19,6 +19,7 @@ import { ApiResponse } from "../utils/ApiUtil";
 import '../css/editor.css'
 import { RadioChangeEvent } from "antd/lib";
 import { TinyColor } from '@ctrl/tinycolor';
+import dayjs from 'dayjs'
 
 const { Content } = Layout;
 const { Panel } = Collapse;
@@ -27,10 +28,13 @@ type State = {
   title: string;
   content: string;
   importance: string;
+  savetime: string;
   success: string | null;
   userName: string | null;
   noteTitles: string[];
-  noteContentCache: { [key: string]: string | void };
+  noteImportances: string[];
+  noteSaveTimes: string[];
+  noteContentCache: { [key: string]: string };
 };
 
 class NoteList extends React.Component<{}, State> {
@@ -42,15 +46,18 @@ class NoteList extends React.Component<{}, State> {
     title: "",
     content: "",
     importance: "Normal",
+    savetime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
     success: null,
     userName: localStorage.getItem("username"),
     noteTitles: [],
+    noteSaveTimes: [],
+    noteImportances: [],
     noteContentCache: {},
   };
   saveInterval: NodeJS.Timeout | undefined;
 
   componentDidMount() {
-    this.saveInterval = setInterval(() => this.saveContent(), 60000);
+    this.saveInterval = setInterval(() => this.autoSave(), 30000);
     this.getNoteTitles();
   }
 
@@ -96,6 +103,7 @@ class NoteList extends React.Component<{}, State> {
       return;
     }
     try {
+      this.state.savetime = dayjs().format('YYYY-MM-DD HH:mm:ss');
       const response = (await HttpUtil.post(
         ApiUtil.API_NOTE_UPDATE,
         state
@@ -125,7 +133,9 @@ class NoteList extends React.Component<{}, State> {
     HttpUtil.get(ApiUtil.API_NOTE_LIST + this.state.userName).then(
       async (data: any) => {
         if (data.status === 200) {
-          this.setState({ noteTitles: data.data });
+          this.setState({ noteTitles: data.titles });
+          this.setState({ noteImportances: data.importances });
+          this.setState({ noteSaveTimes: data.save_times });
         } else {
           message.error("获取笔记列表失败！");
         }
@@ -133,20 +143,27 @@ class NoteList extends React.Component<{}, State> {
     );
   };
 
-  getNoteContent = (title: string): Promise<string> => {
-    return HttpUtil.get(
+  getNoteContent = async (title: string): Promise<string> => {
+  if (this.state.noteContentCache[title]) {
+    return this.state.noteContentCache[title];
+  }
+  try {
+    const data: any = await HttpUtil.get(
       ApiUtil.API_NOTE_CONTENT + this.state.userName + "/" + title
-    ).then(async (data: any) => {
-      if (data.status === 200) {
-        return data.data;
-      } else {
-        message.error("获取笔记内容失败！");
-        return "";
-      }
-    });
-  };
+    );
+    if (data.status === 200) {
+      return data.data[0];
+    } else {
+      message.error("获取笔记内容失败！");
+      return "";
+    }
+  } catch (error) {
+    message.error("获取笔记内容失败！");
+    return "";
+  }
+};
 
-  saveContent = () => {
+  autoSave = () => {
     if (
       !this.state.title.trim() ||
       !this.state.content.trim() ||
@@ -157,12 +174,13 @@ class NoteList extends React.Component<{}, State> {
     this.addContent(this.state, true);
   };
 
-  handleEditBottonClick = (note_title: string, note_content: string) => {
+  handleEditBottonClick = (note_title: string, note_content: string, importance: string) => {
+    console.log(note_content)
+  
     this.setState({
-      title: note_title[0],
-    });
-    this.setState({
-      content: note_content[0],
+      title: note_title,
+      content: note_content,
+      importance: importance
     });
   };
 
@@ -178,62 +196,125 @@ class NoteList extends React.Component<{}, State> {
       }
     });
   }
+
   getColorByImportance = (importance: string) => {
     if (importance == "Normal") {
       return '#f0f5ff';
     } else if (importance == "Important") {
-      return '#feffe6';
+      return '#fff2e8';
     } else if (importance == "Crucial") {
-      return '#ffccc7';
+      return '#fff1f0';
     }
-
   }
 
   render() {
     return (
       <Layout>
-          <div
-            style={{
-              minHeight:700,
-              background: "#ffffff",
-              borderRadius: 10,
-              boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-            }}
-          >
-        <Content>
-            <div style={{paddingTop:20, paddingLeft:20}}>
+        <div
+          style={{
+            minHeight: 700,
+            background: "#ffffff",
+            borderRadius: 10,
+            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          <Content>
+            <div 
+            style={{ 
+              paddingTop: 20,
+              paddingLeft: 20,
+              display:"flex",
+              justifyContent:'space-between'
+                }}>
+                  <div>
+
+                    <span style={{ fontSize: "Large", marginRight: 10 }}>
+                      📜{" "}
+                    </span>
               <Input
                 placeholder="请输入笔记名称"
                 style={{ width: 200, marginRight: 10, marginBottom: 10 }}
                 value={this.state.title}
                 onChange={this.handleTitleChange}
               />
+
+              <Radio.Group
+                value={this.state.importance}
+                onChange={this.handleImportanceChange}
+                defaultValue={"Normal"}
+                // buttonStyle="solid"
+              >
+                <ConfigProvider
+                  theme={{
+                    components: {
+                      Radio: {},
+                    },
+                  }}
+                >
+                  <Radio.Button value="Normal">普通</Radio.Button>
+                </ConfigProvider>
+                <ConfigProvider
+                  theme={{
+                    components: {
+                      Radio: {
+                        buttonSolidCheckedBg: "#ff6f00",
+                        buttonSolidCheckedHoverBg: "#ff6f00",
+                        buttonSolidCheckedActiveBg: "#ff6f00",
+                        colorPrimary: "#ff6f00",
+                        colorPrimaryHover: "#ff6f00",
+                        colorPrimaryActive: "#ff6f00",
+                        colorPrimaryBorder: "#ff6f00",
+                      },
+                    },
+                  }}
+                >
+                  <Radio.Button value="Important">重要</Radio.Button>
+                </ConfigProvider>
+                <ConfigProvider
+                  theme={{
+                    components: {
+                      Radio: {
+                        buttonSolidCheckedBg: "#ff4d4f",
+                        buttonSolidCheckedHoverBg: "#ff4d4f",
+                        buttonSolidCheckedActiveBg: "#ff4d4f",
+                        colorPrimary: "#ff4d4f",
+                        colorPrimaryHover: "#ff4d4f",
+                        colorPrimaryActive: "#ff4d4f",
+                        colorPrimaryBorder: "#ff4d4f",
+                      },
+                    },
+                  }}
+                >
+                  <Radio.Button value="Crucial">关键</Radio.Button>
+                </ConfigProvider>
+              </Radio.Group>
               <Button
                 type="primary"
-                style={{ marginRight: 20 }}
+                style={{ marginLeft: 20 }}
                 onClick={() => this.addContent(this.state, false)}
                 icon={<SaveOutlined />}
                 iconPosition="start"
               >
                 保存
               </Button>
-              <Radio.Group
-                value={this.state.importance}
-                onChange={this.handleImportanceChange}
-                defaultValue={"Normal"}
+              </div>
+              <div
+                style={{
+                  color: "#aaa",
+                  marginRight: 50,
+                  paddingTop:6,
+                }}
               >
-                <Radio.Button value="Normal">Normal</Radio.Button>
-                <Radio.Button value="Important">Important</Radio.Button>
-                <Radio.Button value="Crucial">Crucial</Radio.Button>
-              </Radio.Group>
+                上次修改: {this.state.savetime}
+              </div>
             </div>
-            <div style={{paddingLeft:20,paddingRight:20}}>
+            <div style={{ paddingLeft: 20, paddingRight: 20 }}>
               <ReactQuill
                 theme="snow"
                 value={this.state.content || ""}
                 onChange={this.handleContentChange}
                 className="my-editor"
-                style={{  marginBottom: 20 }}
+                style={{ marginBottom: 20 }}
                 modules={{
                   toolbar: [
                     ["bold", "italic", "underline", "strike"], // toggled buttons
@@ -257,128 +338,148 @@ class NoteList extends React.Component<{}, State> {
                 }}
               />
             </div>
-        </Content>
-        <div style={{ margin: "20px 0" }} />
-        <Content>
-          <div style={{marginLeft:20, marginRight:20, marginTop:30}}>
-          {this.state.noteTitles.map((title: string, index) => {
-            const importance = "Normal";
-            const importance_color = this.getColorByImportance(importance);
-            return (
-              <div>
-                <ConfigProvider
-                  theme={{
-                    token: {},
-                    components: {
-                      Collapse: {
-                        colorBorder: importance_color,
-                        headerBg: importance_color
-                      },
-                    },
-                  }}
-                >
-                  <Collapse
-                    onChange={async () => {
-                      const note_content = await this.getNoteContent(title);
-                      this.setState((prevState) => ({
-                        noteContentCache: {
-                          ...prevState.noteContentCache,
-                          [title]: note_content[0],
+          </Content>
+          <div style={{ margin: "20px 0" }} />
+          <Content>
+            <div style={{ marginLeft: 20, marginRight: 20, marginTop: 30 }}>
+              {this.state.noteTitles.map((title: string, index) => {
+                const importance = this.state.noteImportances[index];
+                const importance_color = this.getColorByImportance(importance);
+                return (
+                  <div>
+                    <ConfigProvider
+                      theme={{
+                        token: {},
+                        components: {
+                          Collapse: {
+                            colorBorder: importance_color,
+                            headerBg: importance_color,
+                          },
                         },
-                      }));
-                    }}
-                  >
-                    <Panel
-                      header={
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "flex-end",
-                          }}
-                        >
-                          <span style={{fontSize: "normal", marginRight:10}}>🏷️ </span>
-                          <span
-                            style={{ fontWeight: "normal", marginRight: "auto" }}
-                          >
-                            {title}
-                          </span>
-                          <ConfigProvider
-                            theme={{
-                              components: {
-                                Button: {
-                                  defaultBg: '#ffffff',
-                                  defaultHoverBg:'#1677FF',
-                                  defaultColor: "#2f54eb",
-                                  defaultHoverColor: "#ffffff",
-                                  lineWidth: 0,
-                                },
-                              },
-                            }}
-                          >
-                            <Button
-                              type="default"
-                              style={{ marginLeft: 10 }}
-                              onClick={async (event) => {
-                                event.stopPropagation();
-                                const note_content = await this.getNoteContent(
-                                  title
-                                );
-                                this.setState((prevState) => ({
-                                  noteContentCache: {
-                                    ...prevState.noteContentCache,
-                                    [title]: note_content[0],
-                                  },
-                                }));
-                                console.log(note_content);
-                                this.handleEditBottonClick(title, note_content);
-                              }}
-                            >
-                              编辑
-                            </Button>
-                          </ConfigProvider>
-                          <ConfigProvider
-                            theme={{
-                              components: {
-                                Button: {
-                                  defaultBg: '#ffffff',
-                                  defaultColor: '#f5222d',
-                                  defaultHoverBg: '#ff4d4f',
-                                  defaultHoverColor: '#ffffff',
-                                  lineWidth: 0,
-                                },
-                              },
-                            }}
-                          >
-                            <Button
-                            type="default"
-                              style={{ marginLeft: 10 }}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                this.deleteNote(title);
-                              }}
-                            >
-                              删除
-                            </Button>
-                          </ConfigProvider>
-                        </div>
-                      }
-                      key={index}
+                      }}
                     >
-                      <div
-                        dangerouslySetInnerHTML={{
-                          __html: this.state.noteContentCache[title] ?? "",
+                      <Collapse
+                        onChange={async () => {
+                          const note_content: string =
+                            await this.getNoteContent(title);
+                          this.setState((prevState) => ({
+                            noteContentCache: {
+                              ...prevState.noteContentCache,
+                              [title]: note_content,
+                            },
+                          }));
                         }}
-                      />
-                    </Panel>
-                  </Collapse>
+                      >
+                        <Panel
+                          header={
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                              }}
+                            >
+                              <span
+                                style={{ fontSize: "Large", marginRight: 10 }}
+                              >
+                                🏷️{" "}
+                              </span>
+                              <span
+                                style={{
+                                  fontWeight: "bold",
+                                  marginRight: "auto",
+                                  paddingTop: 4,
+                                }}
+                              >
+                                {title}
+                              </span>
+                              <ConfigProvider
+                                theme={{
+                                  components: {
+                                    Button: {
+                                      defaultBg: "#ffffff",
+                                      defaultHoverBg: "#1677FF",
+                                      defaultColor: "#2f54eb",
+                                      defaultHoverColor: "#ffffff",
+                                      lineWidth: 0,
+                                    },
+                                  },
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    marginRight: 20,
+                                    paddingTop: 6,
+                                    color: "#aaa",
+                                  }}
+                                >
+                                  上次修改: {this.state.noteSaveTimes[index]}
+                                </div>
+                                <Button
+                                  type="default"
+                                  style={{ marginLeft: 10 }}
+                                  onClick={async (event) => {
+                                    event.stopPropagation();
+                                    const note_content: string =
+                                      await this.getNoteContent(title);
+                                    this.setState((prevState) => ({
+                                      noteContentCache: {
+                                        ...prevState.noteContentCache,
+                                        [title]: note_content,
+                                      },
+                                    }));
+                                    this.handleEditBottonClick(
+                                      title,
+                                      note_content,
+                                      importance
+                                    );
+                                  }}
+                                >
+                                  编辑
+                                </Button>
+                              </ConfigProvider>
+                              <ConfigProvider
+                                theme={{
+                                  components: {
+                                    Button: {
+                                      defaultBg: "#ffffff",
+                                      defaultColor: "#f5222d",
+                                      defaultHoverBg: "#ff4d4f",
+                                      defaultHoverColor: "#ffffff",
+                                      lineWidth: 0,
+                                    },
+                                  },
+                                }}
+                              >
+                                <Button
+                                  type="default"
+                                  style={{ marginLeft: 10 }}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    this.deleteNote(title);
+                                  }}
+                                >
+                                  删除
+                                </Button>
+                              </ConfigProvider>
+                            </div>
+                          }
+                          key={index}
+                        >
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: this.state.noteContentCache[title] ?? "",
+                            }}
+                          />
+                        </Panel>
+                      </Collapse>
 
-                  <div style={{ margin: "10px 0" }} />
-                </ConfigProvider>
-              </div>
-            );
-          })}
-          </div>
-        </Content>
+                      <div style={{ margin: "10px 0" }} />
+                    </ConfigProvider>
+                  </div>
+                );
+              })}
+            </div>
+          </Content>
         </div>
       </Layout>
     );

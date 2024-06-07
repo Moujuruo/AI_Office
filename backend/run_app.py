@@ -498,21 +498,28 @@ def insertNote():
     note_title = data.get('title')
     note_content = data.get('content')
     user_id = data.get('userName')
+    importance = data.get('importance')
+    savetime = data.get('savetime')
     
     existing_note = RNote.getNoteByTitle(note_title, user_id)
     if existing_note:
-        result = RNote.updateNote(note_title, note_content, user_id)
+        result = RNote.updateNote(note_title, note_content, user_id, importance, savetime)
     else:
-        result = RNote.insertNote(note_title, note_content, user_id)
+        result = RNote.insertNote(note_title, note_content, user_id, importance, savetime)
     return jsonify(result), result['status']
 
 @app.route(apiPrefix + 'getNoteList/<user>')
 def getNoteList(user):
     try:
         array = RNote.getNoteTitleList(user)
+        note_titles = [t[0] for t in array]
+        note_importances = [t[1] for t in array]
+        note_savetimes = [t[2] for t in array]
         response = {
            'status': 200,
-           'data': array
+           'titles': note_titles,
+           'importances': note_importances,
+           'save_times': note_savetimes
         }
         return json.dumps(response)
     except Exception as e:
