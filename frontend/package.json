@@ -21,6 +21,7 @@
     "antd-style": "^3.6.2",
     "buffer": "^6.0.3",
     "dayjs": "^1.11.11",
+    "echarts": "^5.5.0",
     "moment": "^2.30.1",
     "rc-queue-anim": "^2.0.0",
     "rc-tween-one": "^3.0.6",

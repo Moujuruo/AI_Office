@@ -7,7 +7,7 @@ import Login from './pages/Login/Login';
 import Register from './pages/Login/Register';
 import ProtectedRoute from './router/ProtectedRoute';
 import MainLayout from './pages/MainLayout';
-import Homepage from './pages/HomePage';
+import Homepage from './pages/HomePage/HomePage';
 import NoteList from './pages/NotePage';
 import RoomBooking from './pages/Reservation/ReservationPage';
 import TeamManagement from './pages/Team/TeamManagement';
