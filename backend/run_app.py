@@ -490,6 +490,31 @@ def getBeInvitedTeams():
 
     # return jsonify({"data": result, "status": 200}), 200
 
+# agreeinvitation
+@app.route(apiPrefix + 'agreeinvitation', methods=['POST'])
+def agreeinvitation():
+    data = request.get_json()
+    teamID = data['teamID']
+    userID = data['userID']
+    result_1 = Team.deleteTeamInvitation(teamID, userID)
+    if result_1 is False:
+        return jsonify({"data": "Failed to agree invitation", "status": 500}), 500
+    result_2 = Team.insertTeamMember(teamID, userID)
+    if result_2 is False:
+        return jsonify({"data": "Failed to agree invitation", "status": 500}), 500
+    return jsonify({"data": "Success to agree invitation", "status": 200}), 200
+
+# disagreeinvitation
+@app.route(apiPrefix + 'disagreeinvitation', methods=['POST'])
+def disagreeinvitation():
+    data = request.get_json()
+    teamID = data['teamID']
+    userID = data['userID']
+    result = Team.deleteTeamInvitation(teamID, userID)
+    if result is False:
+        return jsonify({"data": "Failed to disagree invitation", "status": 500}), 500
+    return jsonify({"data": "Success to disagree invitation", "status": 200}), 200
+
 
 ##################  Note接口  ##################
 @app.route(apiPrefix + 'updateNote', methods=['POST'])
