@@ -217,6 +217,7 @@ class NoteList extends React.Component<{}, State> {
             background: "#ffffff",
             borderRadius: 10,
             boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+            paddingBottom: 30,
           }}
         >
           <Content>
@@ -341,7 +342,7 @@ class NoteList extends React.Component<{}, State> {
           <div style={{ margin: "20px 0" }} />
           <Content>
             <div style={{ marginLeft: 20, marginRight: 20, marginTop: 30 }}>
-              <QueueAnim delay={300}>
+              <QueueAnim delay={300} type='top'>
                 {this.state.noteTitles.map((title: string, index) => {
                   const importance = this.state.noteImportances[index];
                   const importance_color =
