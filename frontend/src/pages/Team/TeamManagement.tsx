@@ -5,6 +5,7 @@ import CustomButton from './CustomButton';
 import ApiUtil from '../../utils/ApiUtil';
 import HttpUtil from '../../utils/HttpUtil';
 import { ApiResponse } from '../../utils/ApiUtil';
+import QueueAnim from 'rc-queue-anim';
 
 interface Member {
   member_id: number;

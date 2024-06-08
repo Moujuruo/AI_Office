@@ -1,66 +1,36 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { ProChat, ProChatProvider, useProChat } from '@ant-design/pro-chat';
-import HttpUtil from '../utils/HttpUtil';
-import ApiUtil from '../utils/ApiUtil';
+import HttpUtil from '../../utils/HttpUtil';
+import ApiUtil from '../../utils/ApiUtil';
+import { ApiResponse } from '../../utils/ApiUtil';
 import { XfVoiceDictation } from '@muguilin/xf-voice-dictation';
 import styled from 'styled-components';
+import RightTopSection from './RightTopSection';
+import LeftTopSection from './LeftTopSection';
+import RightTopSection2 from './RightTopsection2';
 
-
-interface ApiResponse<T> {
-    status: number;
-    data: T;
-}
-
-const ScrollContainer = styled.div`
-  width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  box-sizing: border-box;
-  padding: 10px 0;
+const Container = styled.div`
   display: flex;
+  flex-direction: column;
   align-items: center;
+  width: 100%;
 `;
 
-const ScrollContent = styled.div`
-  display: inline-block;
-  animation: scroll 10s linear infinite;
+const TopArea = styled.div`
   display: flex;
-
-  @keyframes scroll {
-    0% { transform: translateX(100%); }
-    100% { transform: translateX(-100%); }
-  }
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1000px;
+  margin-bottom: 20px;
+  position: relative;
 `;
 
-const Item = styled.div<{ bgColor: string }>`
-  display: inline-block;
-  background: ${({ bgColor }) => bgColor};
-  padding: 20px;
-  margin: 0 10px;
+const Placeholder = styled.div`
+  width: 48%;
+  height: 300px;
+  border: 1px solid #ddd;
   border-radius: 10px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
 `;
-
-const items = [
-  { id: 1, content: '软件工程学习指南', bgColor: '#FFDD57' },
-  { id: 2, content: '错题笔记', bgColor: '#FF6F61' },
-  { id: 3, content: '笔记3', bgColor: '#4BCF90' },
-  { id: 4, content: 'Article title', bgColor: '#4A90E2' },
-  // Add more items if needed
-];
-
-const InfiniteScroll = () => (
-  <ScrollContainer>
-    <ScrollContent>
-      {items.map(item => (
-        <Item key={item.id} bgColor={item.bgColor}>{item.content}</Item>
-      ))}
-      {items.map(item => (
-        <Item key={`duplicate-${item.id}`} bgColor={item.bgColor}>{item.content}</Item>
-      ))}
-    </ScrollContent>
-  </ScrollContainer>
-);
 
 
 const Homepage: React.FC = () => {
@@ -118,26 +88,30 @@ const Homepage: React.FC = () => {
     };
 
     
-      return (
-        <div>
-          <InfiniteScroll />
-          <div
-            style={{
-              background: "#ffffff",
-              borderRadius: 10,
-              boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-              marginTop: 20,
-            }}
-          >
-            <div style={{ height: "400px" }}>
-              <ProChat
-                helloMessage={"欢迎使用协时通，我是你的智能AI助手！"}
-                request={handleRequest}
-              />
-            </div>
+    return (
+      <Container>
+        <TopArea>
+          <LeftTopSection />
+          <RightTopSection2 /> {/* Use the new component */}
+        </TopArea>
+        <div
+          style={{
+            background: "#ffffff",
+            borderRadius: 10,
+            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+            width: '100%',
+            maxWidth: '1000px',
+          }}
+        >
+          <div style={{ height: "350px" }}>
+            <ProChat
+              helloMessage={"欢迎使用协时通，我是你的智能AI助手！"}
+              request={handleRequest}
+            />
           </div>
         </div>
-      );
+      </Container>
+    );
 };
 
 export default Homepage;
