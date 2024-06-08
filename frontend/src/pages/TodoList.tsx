@@ -1,11 +1,12 @@
 import React from 'react';
-import { Layout, Button,Input, message, Modal, Collapse } from 'antd';
+import { Layout, Button,Input, message, Modal, Collapse, Badge, ConfigProvider} from 'antd';
 import { ProTable, ProColumns } from '@ant-design/pro-components';
 import {EditOutlined, CloseOutlined, PlusOutlined, SearchOutlined, AppstoreAddOutlined } from '@ant-design/icons';
 import InfoDialog from './InfoDialog';
 import AddItemDialog from './AddItemDialog';
 import HttpUtil from '../utils/HttpUtil';
 import ApiUtil from '../utils/ApiUtil';
+import QueueAnim from 'rc-queue-anim';
 
 const { Content } = Layout;
 const {Panel} = Collapse;
@@ -64,6 +65,11 @@ class TodoList extends React.Component<{}, TodoListState> {
             title: '活动名称',
             dataIndex: 'ActivityName',
             key: 'ActivityName',
+            render: (_, record) => {
+                return (
+                    <Badge status="success" text={record.ActivityName} />
+                );
+            }
         },
         {
             title: '开始时间',
@@ -247,19 +253,6 @@ class TodoList extends React.Component<{}, TodoListState> {
             });
     };
 
-    // gotoAdmin = () => {
-    //     this.setState({
-    //         showAdmin: true,
-    //         show_back: "block",
-    //     });
-    // };
-
-    // onBack = () => {
-    //     this.setState({
-    //         showAdmin: false,
-    //         show_back: "none",
-    //     });
-    // };
 
 
     renderItems = (items: TodoItem[]) => {
@@ -348,34 +341,40 @@ class TodoList extends React.Component<{}, TodoListState> {
             <Content>
               <div
                 style={{
-                    minHeight: 700,
+                  minHeight: 700,
                   background: "#ffffff",
                   borderRadius: 10,
                   boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+                  paddingBottom: 30,
                 }}
               >
-                <div style={{ paddingTop: 20, marginLeft: 20 }}>
-                  <Search
-                    placeholder="搜索活动或事项"
-                    onSearch={this.handleSearch}
-                    enterButton={<SearchOutlined />}
-                    style={{ width: 200, marginRight: 16 }}
-                  />
-                  {/* <Button 
-                        ghost
-                        onClick={this.showAllData}
-                        type="primary"
-                        >
-                            显示全部
-                        </Button> */}
-                  <Button
-                    type="primary"
-                    style={{}}
-                    onClick={() => this.showUpdateDialog()}
-                    icon={<AppstoreAddOutlined />}
-                  >
-                    添加
-                  </Button>
+                <div
+                  style={{
+                    paddingTop: 20,
+                    marginLeft: 20,
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                  key="demo1"
+                >
+                  <div>
+                    <Search
+                      placeholder="搜索活动或事项"
+                      onSearch={this.handleSearch}
+                      enterButton={<SearchOutlined />}
+                      style={{ width: 200, marginRight: 16 }}
+                    />
+                  </div>
+                  <div>
+                    <Button
+                      type="primary"
+                      style={{ marginRight: 40 }}
+                      onClick={() => this.showUpdateDialog()}
+                      icon={<AppstoreAddOutlined />}
+                    >
+                      添加
+                    </Button>
+                  </div>
                 </div>
 
                 <InfoDialog
@@ -393,38 +392,81 @@ class TodoList extends React.Component<{}, TodoListState> {
                   ItemId={this.state.currentItem?.ItemID || 0}
                   editingItem={this.state.currentItem || null}
                 />
-                <div style={{ margin: "20px 0" }} />
+                <div style={{ margin: "20px 0" }} key="demo2" />
+                <div key="demo3">
+                  <ProTable<TodoActivity>
+                    columns={columns}
+                    dataSource={this.state.data}
+                    style={{ padding: 0 }}
+                    rowKey="key"
+                    pagination={{ pageSize: 20 }}
+                    //   scroll={{ y: 340 }}
+                    search={false}
+                    options={false}
+                  />
+                </div>
 
-                <ProTable<TodoActivity>
-                  columns={columns}
-                  dataSource={this.state.data}
-                  style={{ padding: 0 }}
-                  rowKey="key"
-                  pagination={{ pageSize: 20 }}
-                  //   scroll={{ y: 340 }}
-                  search={false}
-                  options={false}
-                />
-
-                <div style={{marginLeft:20, marginRight:20}}>
-                  <Collapse>
-                    {this.state.data.map((activity) => (
-                      <Panel
-                        header={activity.ActivityName}
-                        key={activity.ActivityID}
+                <div style={{ marginLeft: 20, marginRight: 20 }} key="demo5">
+                  <QueueAnim delay={200} type="top">
+                    {this.state.data.map((activity, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          marginBottom: 10,
+                        }}
                       >
-                        <p>
-                          开始时间:{" "}
-                          {`${activity.ActivityBeginDate} ${activity.ActivityBeginTime}`}
-                        </p>
-                        <p>
-                          结束时间:{" "}
-                          {`${activity.ActivityEndDate} ${activity.ActivityEndTime}`}
-                        </p>
-                        {this.renderItems(activity.items)}
-                      </Panel>
+                        <ConfigProvider
+                          theme={{
+                            token: {},
+                            components: {
+                              Collapse: {
+                                colorBorder: "#f0f5ff",
+                                headerBg: "#f0f5ff",
+                              },
+                            },
+                          }}
+                        >
+                          <Collapse>
+                            <Panel
+                              header={
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "flex-start",
+                                    }}
+                                >
+                                  <div
+                                  style={{
+                                    fontSize: 'Large',
+                                    marginRight: 10
+                                  }}
+                                  >
+                                    📜
+                                  </div>
+                                  <div
+                                    style={{
+                                        fontWeight: "bold",
+                                    }}
+                                  >{activity.ActivityName}</div>
+                                </div>
+                              }
+                              key={activity.ActivityID}
+                            >
+                              <p>
+                                开始时间:{" "}
+                                {`${activity.ActivityBeginDate} ${activity.ActivityBeginTime}`}
+                              </p>
+                              <p>
+                                结束时间:{" "}
+                                {`${activity.ActivityEndDate} ${activity.ActivityEndTime}`}
+                              </p>
+                              {this.renderItems(activity.items)}
+                            </Panel>
+                          </Collapse>
+                        </ConfigProvider>
+                      </div>
                     ))}
-                  </Collapse>
+                  </QueueAnim>
                 </div>
 
                 {/* <div style={{ position: "absolute", left: "10px", bottom: "10px" }}>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, DatePicker, Input, Form, message, Pagination  } from 'antd';
+import { Button, DatePicker, Input, Form, message, Pagination, Divider  } from 'antd';
 import { LeftOutlined, RightOutlined, ReloadOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import ReservationModal from './ReservationModal';
@@ -7,7 +7,7 @@ import HttpUtil from '../../utils/HttpUtil';
 import ApiUtil from '../../utils/ApiUtil';
 import RoomInfoTooltip from './RoomInfoToolTip';
 import MyReservationsModal from './MyReservation';
-import { scryRenderedDOMComponentsWithClass } from 'react-dom/test-utils';
+import QueueAnim from 'rc-queue-anim';
 
 const { Search } = Input;
 
@@ -35,6 +35,7 @@ interface Reservation {
 const iconlist = ["🛖", "📱", "💻", "🏠", "🏪", "🏯", "🏫", "🏬", "🏭", "🛞"]
 
 const RoomBooking = () => {
+    const [showPagination, setShowPagination] = useState(true);
     const [selectedDate, setSelectedDate] = useState(moment());
     const [filteredRooms, setFilteredRooms] = useState<Room[]>([]);
     const [modalVisible, setModalVisible] = useState(false);
@@ -178,20 +179,20 @@ const RoomBooking = () => {
                     <div
                         key={index}
                         style={{
+                            marginTop:1,
                             position: 'absolute',
                             left: `calc(${startOffset * 100 / 15}%)`,
                             width: `calc(${duration * 100 / 15}%)`,
                             height: '100%',
                             backgroundColor: '#1890ff',
-                            borderColor: '#000000',
-                            // backgroundColor: '#000000',
-                            opacity: 0.7,
-                            border: '1px solid',
-                            boxSizing: 'border-box',
-                            color: '#000000'
+                            color: 'fff',
+                            borderRadius: 3,
+                            opacity: 0.8,
                         }}
                     >
+                        <div style={{color:'white', marginLeft:5, marginTop:5}}>
                         已预约
+                        </div>
                     </div>
                 );
             });
@@ -210,13 +211,14 @@ const RoomBooking = () => {
     return (
       <div
         style={{
-            minHeight:700,
+          minHeight: 880,
           background: "#ffffff",
           borderRadius: 10,
           boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-          paddingTop:20,
-          paddingLeft:20,
-          paddingRight:20
+          paddingTop: 20,
+          paddingLeft: 20,
+          paddingRight: 20,
+          paddingBottom: 30,
         }}
       >
         <div style={{ marginBottom: 16 }}>
@@ -275,72 +277,76 @@ const RoomBooking = () => {
               {renderTimeSlots()}
             </div>
           </div>
-          {paginatedRooms.map((room) => (
-            <div
-              key={room.id}
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                marginBottom: 16,
-              }}
-            >
+            {paginatedRooms.map((room) => (
               <div
+                key={room.id}
                 style={{
-                  width: "150px",
-                  textAlign: "center",
-                  lineHeight: "50px",
-                  border: "1px solid",
-                  borderRight: "none",
-                  borderTopLeftRadius: 5,
-                  borderBottomLeftRadius: 5,
-                background:"#f0f5ff",
-                borderColor:"#ffffff",
+                  display: "flex",
+                  flexDirection: "row",
+                  marginBottom: 16,
                 }}
               >
-                <RoomInfoTooltip
-                  room={room}
-                  reservations={reservations}
-                  selectedDate={selectedDate}
-                />
+                <div
+                  style={{
+                    width: "150px",
+                    textAlign: "center",
+                    lineHeight: "50px",
+                    border: "1px solid",
+                    borderRight: "none",
+                    borderTopLeftRadius: 5,
+                    borderBottomLeftRadius: 5,
+                    background: "#f0f5ff",
+                    borderColor: "#ffffff",
+                    fontWeight: 550,
+                  }}
+                >
+                  <RoomInfoTooltip
+                    room={room}
+                    reservations={reservations}
+                    selectedDate={selectedDate}
+                  />
+                </div>
+                <div
+                  style={{
+                    position: "relative",
+                    width: "calc(100% - 150px)",
+                    border: "1px solid",
+                    borderColor: "#ffffff",
+                    height: "50px",
+                  }}
+                >
+                  {Array.from({ length: 15 }, (_, hour) => (
+                    <div
+                      key={hour}
+                      style={{
+                        position: "absolute",
+                        left: `calc(${(hour * 100) / 15}% )`,
+                        height: "50px",
+                        width: "calc(100% / 15)",
+                        borderTop: "1px solid #1677ff",
+                        borderBottom: "1px solid #1677ff",
+                        borderLeft: "1px dashed #c9e0ff",
+                      }}
+                    ></div>
+                  ))}
+                  <QueueAnim type='alpha'>
+                  {renderReservations(room)}
+                    </QueueAnim>
+                </div>
               </div>
-              <div
-                style={{
-                  position: "relative",
-                  width: "calc(100% - 150px)",
-                  border: "1px solid",
-                  borderColor: "#ffffff",
-                  height: "50px",
-                }}
-              >
-                {renderReservations(room)}
-                {Array.from({ length: 15 }, (_, hour) => (
-                  <div
-                    key={hour}
-                    style={{
-                      position: "absolute",
-                      left: `calc(${(hour * 100) / 15}% )`,
-                      height: "50px",
-                      width: "calc(100% / 15)",
-                      borderLeft: "1px solid",
-                      borderColor: "#ffffff"
-                      
-                    }}
-                  ></div>
-                ))}
-              </div>
-            </div>
-          ))}
+            ))}
         </div>
         <div
           style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}
         >
+            {showPagination &&
           <Pagination
             current={currentPage}
             pageSize={pageSize}
             total={filteredRooms.length}
             onChange={handlePageChange}
             showSizeChanger
-          />
+          />}
         </div>
         <ReservationModal
           visible={modalVisible}
