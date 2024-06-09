@@ -192,7 +192,38 @@ def deleteActivity(id):
     except Exception as e:
         return json.dumps({'code': 1, 'message': str(e)}), 500
 
+def get_dates_between(start_date, end_date):
+    from datetime import datetime, timedelta
+    date_list = []
+    current_date = datetime.strptime(start_date, '%Y-%m-%d')
+    end_date = datetime.strptime(end_date, '%Y-%m-%d')
+    while current_date <= end_date:
+        date_list.append(current_date.strftime('%Y-%m-%d'))
+        current_date += timedelta(days=1)
+    return date_list
 
+@app.route(apiPrefix + 'getActivityStatistics/<int:job>')
+def getActivityStatistics(job):
+    try:
+        array = DBUtil.getActivities(job)
+        jsonActivities = DBUtil.getActivitiesFromData(array)
+
+        # Initialize a dictionary to hold the counts
+        activity_counts = {}
+
+        for activity in jsonActivities:
+            begin_date = activity["ActivityBeginDate"]
+            end_date = activity["ActivityEndDate"]
+            dates_in_range = get_dates_between(begin_date, end_date)
+            for date in dates_in_range:
+                if date in activity_counts:
+                    activity_counts[date] += 1
+                else:
+                    activity_counts[date] = 1
+
+        return json.dumps(activity_counts)
+    except Exception as e:
+        return json.dumps({'code': 1, 'message': str(e)}), 500
 
 ##################  Item接口  ##################
 @app.route(apiPrefix + 'updateItem', methods=['POST'])

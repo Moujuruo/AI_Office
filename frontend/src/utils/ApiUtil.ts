@@ -13,6 +13,9 @@ export default class ApiUtil {
     static API_Activity_UPDATE = ApiUtil.URL_ROOT + '/updateActivity';
     static API_Activity_LIST = ApiUtil.URL_ROOT + '/getActivityList/';
     static API_Activity_DELETE = ApiUtil.URL_ROOT + '/deleteActivity/';
+
+    static API_Activity_STATISTICS = ApiUtil.URL_ROOT + '/getActivityStatistics/';
+
     static API_Item_UPDATE = ApiUtil.URL_ROOT + '/updateItem';
     static API_Item_DELETE = ApiUtil.URL_ROOT + '/deleteItem/';
     static API_Item_LIST_BY_ACTIVITY = ApiUtil.URL_ROOT + '/getItemListByActivity/';

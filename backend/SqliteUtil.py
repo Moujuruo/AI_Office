@@ -318,6 +318,7 @@ def updateActivity(activity):
 
 def getActivities(UserID):
     try:
+        lock_threading.acquire()
         sql = 'SELECT * FROM TodoActivity where UserID = %d' % UserID
         cursor.execute(sql)
         activities = cursor.fetchall()
@@ -325,6 +326,8 @@ def getActivities(UserID):
     except Exception as e:
         print(repr(e))
         return []
+    finally:
+        lock_threading.release()
 
 def getActivitiesFromData(dataList):
     activities = []
