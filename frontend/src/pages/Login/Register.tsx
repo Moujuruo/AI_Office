@@ -58,7 +58,7 @@ const Register: React.FC = () => {
             placeholder="用户名"
             // rules={[{ required: true, message: '请输入用户名' }]}
             // 英文、数字、下划线，长度4-16
-            rules={[{ required: true, pattern: /^[a-zA-Z0-9_]{4,16}$/, message: '用户名格式不正确' }]}
+            rules={[{ required: true, pattern: /^[a-zA-Z0-9_]{4,16}$/, message: '用户名只能包含英文、数字、下划线，长度在4-16' }]}
         
           />
           <ProFormSelect
