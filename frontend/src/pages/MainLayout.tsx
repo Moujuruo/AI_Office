@@ -48,11 +48,17 @@ const MainLayout: React.FC = () => {
     const checkInvitations = async () => {
         try {
             const response = await HttpUtil.post(ApiUtil.API_GET_BE_INVITED_TEAMS, { userID: userID }) as ApiResponse<inviteinfo[]>;
+            console.log('response:', response);
             if (response.status === 200) {
+                console.log('invitations1:', invitations);
+
                 const newinvitations = response.data;
                 setInvitations(newinvitations);
-                if (invitations.length > 0) {
-                    invitations.forEach((invitation: any) => {
+                
+
+                if (newinvitations.length > 0) {
+                    console.log('invitations:', newinvitations);
+                    newinvitations.forEach((invitation: any) => {
                         const { team_id, captain_id } = invitation;
                         const key = `invitation-${team_id}`;
 
