@@ -168,7 +168,7 @@ def get_team_members_with_details(team_id):
     try:
         lock_threading.acquire()
         cursor.execute('''
-            SELECT u.id, tm.if_captain
+            SELECT u.id, tm.if_captain, u.username
             FROM team_member tm
             JOIN users u ON tm.member_id = u.id
             WHERE tm.team_id = ?
@@ -191,4 +191,33 @@ def search_in_team_invitation(member_id):
     finally:
         lock_threading.release()
         
+def delete_team(team_id):
+    try:
+        lock_threading.acquire()
+        # 先删 team_member
+        cursor.execute('''DELETE FROM team_member WHERE team_id = ?''', (team_id,))
+        conn.commit()
+        # 再删 team_invitation
+        cursor.execute('''DELETE FROM team_invitation WHERE team_id = ?''', (team_id,))
+        conn.commit()
+        # 最后删 team
+        cursor.execute('''DELETE FROM team WHERE id = ?''', (team_id,))
+        conn.commit()
+        return True
+    except sqlite3.Error as e:
+        print(e)
+        return False
+    finally:
+        lock_threading.release()
+
+def get_captain_teams(captain_id):
+    try:
+        lock_threading.acquire()
+        cursor.execute('''SELECT * FROM team WHERE captain_id = ?''', (captain_id,))
+        return cursor.fetchall()
+    except sqlite3.Error as e:
+        print(e)
+        return False
+    finally:
+        lock_threading.release()
 

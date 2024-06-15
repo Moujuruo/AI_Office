@@ -51,5 +51,7 @@ export default class ApiUtil {
     static API_GET_BE_INVITED_TEAMS = ApiUtil.URL_ROOT + '/getBeInvitedTeams';
     static API_ACCEPT_INVITATION = ApiUtil.URL_ROOT + '/agreeinvitation';
     static API_REJECT_INVITATION = ApiUtil.URL_ROOT + '/disagreeinvitation';
-
+    static API_DELETE_TEAM = ApiUtil.URL_ROOT + '/deleteTeam';
+    static API_GET_CAPTAIN_TEAMS = ApiUtil.URL_ROOT + '/getCaptainTeams';
+    static API_DELETE_MEMBER = ApiUtil.URL_ROOT + '/deleteMember';
 }

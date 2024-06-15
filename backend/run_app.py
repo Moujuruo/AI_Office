@@ -463,7 +463,8 @@ def getAllTeams():
         for member in members:
             team_info["members"].append({
                 "member_id": member[0],
-                "is_captain": member[1]
+                "is_captain": member[1],
+                "username": member[2],
             })
         
         team_list.append(team_info)
@@ -545,6 +546,38 @@ def disagreeinvitation():
     if result is False:
         return jsonify({"data": "Failed to disagree invitation", "status": 500}), 500
     return jsonify({"data": "Success to disagree invitation", "status": 200}), 200
+
+@app.route(apiPrefix + 'deleteTeam', methods=['POST'])
+def deleteTeam():
+    data = request.get_json()
+    print(data)
+    teamID = data['teamID']
+    userID = data['userID']
+    userID = int(userID)
+    captainID = Team.get_team_captain(teamID)[0]
+    
+    if captainID != userID:
+        return jsonify({"data": "You are not the captain", "status": 400}), 400
+    result = Team.delete_team(teamID)
+    if result is False:
+        return jsonify({"data": "Failed to delete team", "status": 500}), 500
+    return jsonify({"data": "Success to delete team", "status": 200}), 200
+
+# deleteMember
+@app.route(apiPrefix + 'deleteMember', methods=['POST'])
+def deleteMember():
+    data = request.get_json()
+    teamID = data['teamID']
+    userID = data['userID']
+    userID = int(userID)
+    memberID = data['memberID']
+    captainID = Team.get_team_captain(teamID)[0]
+    if captainID != userID:
+        return jsonify({"data": "You are not the captain", "status": 400}), 400
+    result = Team.deleteTeamMember(teamID, memberID)
+    if result is False:
+        return jsonify({"data": "Failed to delete member", "status": 500}), 500
+    return jsonify({"data": "Success to delete member", "status": 200}), 200
 
 
 ##################  Note接口  ##################

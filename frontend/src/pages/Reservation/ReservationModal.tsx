@@ -3,13 +3,9 @@ import { Modal, Form, Select, DatePicker, Input, Slider, message } from 'antd';
 import moment from 'moment';
 import HttpUtil from '../../utils/HttpUtil';
 import ApiUtil from '../../utils/ApiUtil';
+import { ApiResponse } from '../../utils/ApiUtil';
 
 const { Option } = Select;
-
-interface ApiResponse<T> {
-  status: number;
-  data: T;
-}
 
 interface Room {
   id: number;
@@ -26,6 +22,20 @@ interface Reservation {
   date: string;
   subject: string;
 }
+
+interface Member {
+  member_id: number;
+  is_captain: string;
+  avatar: string;
+}
+
+interface Team {
+  team_id: number;
+  team_name: string;
+  is_captain: number;
+  members: Member[];
+}
+
 
 interface ReservationModalProps {
     visible: boolean;
@@ -78,6 +88,32 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
       message.error('获取预定信息失败');
     }
   };
+
+  const fetchTeams = async () => {
+    try {
+      const response = await HttpUtil.post(ApiUtil.API_GET_ALL_TEAMS,
+        {
+          userID: localStorage.getItem('userID')
+        }
+      ) as ApiResponse<Team[]>;
+      if (response.status === 200) {
+        const teamsWithAvatar = await Promise.all(
+          response.data.map(async (team) => {
+            const membersWithAvatar = await Promise.all(
+              team.members.map(async (member) => {
+                return { ...member };
+              })
+            );
+            return { ...team, members: membersWithAvatar };
+          })
+        );
+      } else {
+        message.error('获取团队列表失败');
+      }
+    } catch (error) {
+      message.error('获取团队列表失败');
+    }
+  };
   
 
   const marks = {
@@ -118,7 +154,7 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
     try {
       const newReservation = {
         room_id: values.room_id,
-        user_id: localStorage.getItem('userID') || 1, // Assuming user_id is stored in localStorage or a default value
+        user_id: localStorage.getItem('userID') || 1,
         start_time: moment().startOf('day').add(values.time[0], 'hours').format('HH:mm'),
         end_time: moment().startOf('day').add(values.time[1], 'hours').format('HH:mm'),
         date: values.date.format('YYYY-MM-DD'),
@@ -139,6 +175,8 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
   return (
     <Modal title="创建预约" open={visible} onOk={form.submit} onCancel={onCancel}>
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        <Form.Item name="title" label="会议主题" rules={[{ required: true, message: '请输入会议主题' }]}>
+        <Input />
         <Form.Item name="room_id" label="会议室" rules={[{ required: true, message: '请选择会议室' }]}>
           <Select onChange={(value: number) => setRoom(value)} value={room}>
             {meetingRooms.map(room => (
@@ -162,8 +200,7 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
             tooltip={{ formatter: formatSliderTooltip }}
           />
         </Form.Item>
-        <Form.Item name="title" label="会议主题" rules={[{ required: true, message: '请输入会议主题' }]}>
-          <Input />
+       
         </Form.Item>
       </Form>
     </Modal>
