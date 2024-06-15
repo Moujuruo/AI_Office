@@ -9,7 +9,8 @@ import QueueAnim from 'rc-queue-anim';
 
 interface Member {
   member_id: number;
-  is_captain: string;
+  is_captain: number;
+  username: string;
   avatar: string;
 }
 
@@ -37,6 +38,40 @@ const TeamManagement: React.FC = () => {
     fetchTeams();
   }, []);
 
+  const deleteTeam = async (teamId: number) => {
+    try {
+      const userId = localStorage.getItem('userID') || 1;
+      const response = await HttpUtil.post(ApiUtil.API_DELETE_TEAM, { userID: userId, teamID: teamId }) as ApiResponse<string>;
+      if (response.status === 200) {
+        message.success('删除团队成功');
+        setTeams(teams.filter(team => team.team_id !== teamId)); // 更新状态
+      } else if (response.status === 400) {
+        message.error('你没有权限删除该团队');
+      } else {
+        message.error('删除团队失败');
+      }
+    } catch (error) {
+      message.error('删除团队失败');
+    }
+  };
+
+  const deleteTeamMember = async (teamId: number, memberId: number) => {
+    try {
+      const userId = localStorage.getItem('userID') || 1;
+      const response = await HttpUtil.post(ApiUtil.API_DELETE_MEMBER, { userID: userId, teamID: teamId, memberID: memberId}) as ApiResponse<string>;
+      if (response.status === 200) {
+        message.success('删除团队成员成功');
+        fetchTeams();
+      } else if (response.status === 400) {
+        message.error('你没有权限删除该团队');
+      } else {
+        message.error('删除团队失败');
+      }
+    } catch (error) {
+      message.error('删除团队失败');
+    }
+  };
+
   const fetchTeams = async () => {
     try {
       const response = await HttpUtil.post(ApiUtil.API_GET_ALL_TEAMS,
@@ -50,7 +85,7 @@ const TeamManagement: React.FC = () => {
             const membersWithAvatar = await Promise.all(
               team.members.map(async (member) => {
                 const avatarUrl = await getAvatarUrl(member.member_id);
-                console.log("========", avatarUrl);
+                console.log("========", member);
                 return { ...member, avatar: avatarUrl };
               })
             );
@@ -166,10 +201,15 @@ const TeamManagement: React.FC = () => {
             <TeamCard
               teamName={team.team_name}
               members={team.members.map((member) => ({
-                name: `Member ${member.member_id}`,
+                id: member.member_id,
                 avatar: member.avatar,
+                is_captain: member.is_captain,
+                member_name: member.username
               }))}
+              teamId={team.team_id}
               onAddMember={() => handleAddMember(team.team_id)}
+              onDeleteTeam={() => deleteTeam(team.team_id)}
+              onDeleteMember={(memberId) => deleteTeamMember(team.team_id, memberId)}
             />
           </Col>
         ))}

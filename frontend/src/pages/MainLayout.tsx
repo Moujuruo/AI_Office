@@ -66,7 +66,7 @@ const MainLayout: React.FC = () => {
                             message: '团队邀请',
                             description: `你被邀请加入团队 ${team_id}`,
                             btn: (
-                                <div>
+                                <div> 
                                     <Button type='primary' onClick={() => acceptInvitation(team_id, captain_id, key)}>接受</Button>
                                     <Button onClick={() => rejectInvitation(team_id, captain_id, key)} style={{ marginLeft: '8px' }}>拒绝</Button>
                                 </div>
