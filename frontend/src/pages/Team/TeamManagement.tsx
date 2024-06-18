@@ -55,6 +55,21 @@ const TeamManagement: React.FC = () => {
     }
   };
 
+  const updateTeamName = async (teamId: number, newName: string) => {
+    try {
+      const userId = localStorage.getItem('userID') || 1;
+      const response = await HttpUtil.post(ApiUtil.API_UPDATE_TEAM_NAME, { userID: userId, teamID: teamId, teamName: newName }) as ApiResponse<string>;
+      if (response.status === 200) {
+        message.success('更新团队名称成功');
+        fetchTeams();
+      } else {
+        message.error('更新团队名称失败');
+      }
+    } catch (error) {
+      message.error('更新团队名称失败');
+    }
+  };
+
   const deleteTeamMember = async (teamId: number, memberId: number) => {
     try {
       const userId = localStorage.getItem('userID') || 1;
@@ -63,7 +78,7 @@ const TeamManagement: React.FC = () => {
         message.success('删除团队成员成功');
         fetchTeams();
       } else if (response.status === 400) {
-        message.error('你没有权限删除该团队');
+        message.error(response.data);
       } else {
         message.error('删除团队失败');
       }
@@ -210,6 +225,7 @@ const TeamManagement: React.FC = () => {
               onAddMember={() => handleAddMember(team.team_id)}
               onDeleteTeam={() => deleteTeam(team.team_id)}
               onDeleteMember={(memberId) => deleteTeamMember(team.team_id, memberId)}
+              onUpdateTeamName={updateTeamName}
             />
           </Col>
         ))}

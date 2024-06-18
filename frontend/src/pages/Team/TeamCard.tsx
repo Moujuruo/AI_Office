@@ -1,5 +1,5 @@
-import React from 'react';
-import { Card, Avatar, Button, message, Popconfirm, Tooltip } from 'antd';
+import React, { useState } from 'react';
+import { Card, Avatar, Button, message, Popconfirm, Tooltip, Input } from 'antd';
 import { CloseOutlined, DeleteOutlined, UserAddOutlined, UserOutlined } from '@ant-design/icons';
 import HttpUtil from '../../utils/HttpUtil';
 import ApiUtil from '../../utils/ApiUtil';
@@ -17,14 +17,46 @@ interface TeamCardProps {
   onAddMember: () => void;
   onDeleteTeam: () => void;
   onDeleteMember: (memberId: number) => void;
+  onUpdateTeamName: (teamId: number, newName: string) => void; 
 }
 
-const TeamCard: React.FC<TeamCardProps> = ({ teamName, members, teamId, onAddMember, onDeleteTeam, onDeleteMember }) => {
+const TeamCard: React.FC<TeamCardProps> = ({ teamName, members, teamId, onAddMember, onDeleteTeam, onDeleteMember,  onUpdateTeamName}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTeamName, setEditedTeamName] = useState(teamName);
+
   const sortedMembers = [...members].sort((a, b) => b.is_captain - a.is_captain);
+
+  const handleTeamNameDoubleClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleTeamNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditedTeamName(e.target.value);
+  };
+
+  const handleTeamNameSave = () => {
+    onUpdateTeamName(teamId, editedTeamName);
+    setIsEditing(false);
+  };
+
 
   return (
     <Card
-      title={<span>{teamName} <span style={{ fontSize: 'small' }}>共 {members.length} 人</span></span>}
+    title={
+      isEditing ? (
+        <Input
+          value={editedTeamName}
+          onChange={handleTeamNameChange}
+          onPressEnter={handleTeamNameSave}
+          onBlur={handleTeamNameSave}
+          autoFocus
+        />
+      ) : (
+        <span onDoubleClick={handleTeamNameDoubleClick}>
+          {teamName} <span style={{ fontSize: 'small' }}>共 {members.length} 人</span>
+        </span>
+      )
+    }
       bordered={true}
       style={{ width: 400, height: 200 }}
       actions={[
