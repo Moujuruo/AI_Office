@@ -17,6 +17,8 @@ interface inviteinfo {
     user_id: number
 }
 
+
+
 const MainLayout: React.FC = () => {
     const navigate = useNavigate();
     const username = localStorage.getItem('username');
@@ -54,7 +56,7 @@ const MainLayout: React.FC = () => {
 
                 const newinvitations = response.data;
                 setInvitations(newinvitations);
-                
+
 
                 if (newinvitations.length > 0) {
                     console.log('invitations:', newinvitations);
@@ -66,7 +68,7 @@ const MainLayout: React.FC = () => {
                             message: '团队邀请',
                             description: `你被邀请加入团队 ${team_id}`,
                             btn: (
-                                <div> 
+                                <div>
                                     <Button type='primary' onClick={() => acceptInvitation(team_id, captain_id, key)}>接受</Button>
                                     <Button onClick={() => rejectInvitation(team_id, captain_id, key)} style={{ marginLeft: '8px' }}>拒绝</Button>
                                 </div>
@@ -94,7 +96,7 @@ const MainLayout: React.FC = () => {
                 });
                 if (notificationKey !== '')
                     api.destroy(notificationKey);  // Destroy the notification
-                setInvitations(invitations.filter(invitation => invitation.team_id !== teamId)); 
+                setInvitations(invitations.filter(invitation => invitation.team_id !== teamId));
             } else {
                 api.error({
                     message: '接受邀请失败',
@@ -120,7 +122,7 @@ const MainLayout: React.FC = () => {
                 });
                 if (notificationKey !== '')
                     api.destroy(notificationKey);  // Destroy the notification
-                setInvitations(invitations.filter(invitation => invitation.team_id !== teamId)); 
+                setInvitations(invitations.filter(invitation => invitation.team_id !== teamId));
             } else {
                 api.error({
                     message: '拒绝邀请失败',
@@ -270,7 +272,7 @@ const MainLayout: React.FC = () => {
                         <Dropdown
                             overlay={
                                 <Menu>
-                                    {invitations.length==0 ? <a>暂无通知</a>: invitations.map((invitation) => (
+                                    {invitations.length == 0 ? <a>暂无通知</a> : invitations.map((invitation) => (
                                         <Menu.Item key={invitation.team_id}>
                                             <div>
                                                 团队 {invitation.team_id} 的邀请

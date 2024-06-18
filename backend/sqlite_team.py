@@ -221,3 +221,14 @@ def get_captain_teams(captain_id):
     finally:
         lock_threading.release()
 
+def change_team_name(team_id, new_name):
+    try:
+        lock_threading.acquire()
+        cursor.execute('''UPDATE team SET name = ? WHERE id = ?''', (new_name, team_id))
+        conn.commit()
+        return True
+    except sqlite3.Error as e:
+        print(e)
+        return False
+    finally:
+        lock_threading.release()

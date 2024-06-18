@@ -66,7 +66,7 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({ visible, onAdd, onCancel,
     return (
         <Modal
             title="添加事项"
-            visible={visible}
+            open={visible}
             onOk={handleOk}
             onCancel={() => {
                 form.resetFields();

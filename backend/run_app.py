@@ -573,11 +573,30 @@ def deleteMember():
     memberID = data['memberID']
     captainID = Team.get_team_captain(teamID)[0]
     if captainID != userID:
-        return jsonify({"data": "You are not the captain", "status": 400}), 400
+        return jsonify({"data": "非队长无权限删除", "status": 400}), 400
+    if memberID == captainID:
+        return jsonify({"data": "队长不能被删除", "status": 400}), 400
+
     result = Team.deleteTeamMember(teamID, memberID)
     if result is False:
         return jsonify({"data": "Failed to delete member", "status": 500}), 500
     return jsonify({"data": "Success to delete member", "status": 200}), 200
+
+# updateTeamName
+@app.route(apiPrefix + 'updateTeamName', methods=['POST'])
+def updateTeamName():
+    data = request.get_json()
+    teamID = data['teamID']
+    userID = data['userID']
+    userID = int(userID)
+    teamName = data['teamName']
+    captainID = Team.get_team_captain(teamID)[0]
+    if captainID != userID:
+        return jsonify({"data": "非队长无权限修改", "status": 400}), 400
+    result = Team.change_team_name(teamID, teamName)
+    if result is False:
+        return jsonify({"data": "Failed to update team name", "status": 500}), 500
+    return jsonify({"data": "Success to update team name", "status": 200}), 200
 
 
 ##################  Note接口  ##################

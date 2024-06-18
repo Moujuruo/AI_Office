@@ -53,6 +53,7 @@ def createTables():
                 ItemLevel TEXT,
                 create_time TIMESTAMP NOT NULL DEFAULT (datetime('now','localtime')),
                 modify_time TIMESTAMP NOT NULL DEFAULT (datetime('now','localtime')),
+                Status TEXT DEFAULT '未开始',
                 FOREIGN KEY (UserID) REFERENCES users (id),
                 FOREIGN KEY (ActivityID) REFERENCES TodoActivity (ActivityID)
             )
@@ -459,7 +460,8 @@ def getTodoItemsFromData(dataList):
                 "ActivityID": itemArray[1],
                 "UserID": itemArray[2],
                 "ItemContent": itemArray[3],
-                "ItemLevel": itemArray[4]
+                "ItemLevel": itemArray[4],
+                "ItemStatus": itemArray[-1]
             }
             items.append(item)
         return items
