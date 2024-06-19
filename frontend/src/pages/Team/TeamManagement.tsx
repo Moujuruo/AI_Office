@@ -73,7 +73,7 @@ const TeamManagement: React.FC = () => {
   const deleteTeamMember = async (teamId: number, memberId: number) => {
     try {
       const userId = localStorage.getItem('userID') || 1;
-      const response = await HttpUtil.post(ApiUtil.API_DELETE_MEMBER, { userID: userId, teamID: teamId, memberID: memberId}) as ApiResponse<string>;
+      const response = await HttpUtil.post(ApiUtil.API_DELETE_MEMBER, { userID: userId, teamID: teamId, memberID: memberId }) as ApiResponse<string>;
       if (response.status === 200) {
         message.success('删除团队成员成功');
         fetchTeams();
@@ -208,52 +208,65 @@ const TeamManagement: React.FC = () => {
   };
 
   return (
-    <div>
-      <CustomButton onClick={handleCreateTeam} />
-      <Row gutter={16} style={{ marginTop: '16px' }}>
-        {teams.map((team) => (
-          <Col key={team.team_id} span={8}>
-            <TeamCard
-              teamName={team.team_name}
-              members={team.members.map((member) => ({
-                id: member.member_id,
-                avatar: member.avatar,
-                is_captain: member.is_captain,
-                member_name: member.username
-              }))}
-              teamId={team.team_id}
-              onAddMember={() => handleAddMember(team.team_id)}
-              onDeleteTeam={() => deleteTeam(team.team_id)}
-              onDeleteMember={(memberId) => deleteTeamMember(team.team_id, memberId)}
-              onUpdateTeamName={updateTeamName}
-            />
-          </Col>
-        ))}
-      </Row>
-      <Modal
-        title="创建团队"
-        open={createModalVisible}
-        onOk={handleCreateTeamOk}
-        onCancel={handleCreateTeamCancel}
-      >
-        <Input
-          placeholder="请输入团队名称"
-          value={newTeamName}
-          onChange={(e) => setNewTeamName(e.target.value)}
-        />
-      </Modal>
-      <Modal
-        title="邀请成员"
-        open={inviteModalVisible}
-        onOk={handleInviteMemberOk}
-        onCancel={handleInviteMemberCancel}
-      >
-        <Input
-          placeholder="请输入要邀请的成员名称"
-          value={invitedMemberName}
-          onChange={(e) => setInvitedMemberName(e.target.value)}
-        />
-      </Modal>
+    <div
+      style={{
+        minHeight: 880,
+        background: "#ffffff",
+        borderRadius: 10,
+        boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+        paddingTop: 20,
+        paddingLeft: 20,
+        paddingRight: 20,
+        paddingBottom: 30,
+      }}
+    >
+      <div>
+        <CustomButton onClick={handleCreateTeam} />
+        <Row gutter={16} style={{ marginTop: '16px' }}>
+          {teams.map((team) => (
+            <Col key={team.team_id} >
+              <TeamCard
+                teamName={team.team_name}
+                members={team.members.map((member) => ({
+                  id: member.member_id,
+                  avatar: member.avatar,
+                  is_captain: member.is_captain,
+                  member_name: member.username
+                }))}
+                teamId={team.team_id}
+                onAddMember={() => handleAddMember(team.team_id)}
+                onDeleteTeam={() => deleteTeam(team.team_id)}
+                onDeleteMember={(memberId) => deleteTeamMember(team.team_id, memberId)}
+                onUpdateTeamName={updateTeamName}
+              />
+            </Col>
+          ))}
+        </Row>
+        <Modal
+          title="创建团队"
+          open={createModalVisible}
+          onOk={handleCreateTeamOk}
+          onCancel={handleCreateTeamCancel}
+        >
+          <Input
+            placeholder="请输入团队名称"
+            value={newTeamName}
+            onChange={(e) => setNewTeamName(e.target.value)}
+          />
+        </Modal>
+        <Modal
+          title="邀请成员"
+          open={inviteModalVisible}
+          onOk={handleInviteMemberOk}
+          onCancel={handleInviteMemberCancel}
+        >
+          <Input
+            placeholder="请输入要邀请的成员名称"
+            value={invitedMemberName}
+            onChange={(e) => setInvitedMemberName(e.target.value)}
+          />
+        </Modal>
+      </div>
     </div>
   );
 };

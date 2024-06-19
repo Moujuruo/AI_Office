@@ -2,10 +2,10 @@ import React from 'react';
 import { Layout, Button, Input, message, Modal, Collapse, Badge, ConfigProvider, Tag, Segmented } from 'antd';
 import { ProTable, ProColumns } from '@ant-design/pro-components';
 import { EditOutlined, CloseOutlined, PlusOutlined, SearchOutlined, AppstoreAddOutlined } from '@ant-design/icons';
-import InfoDialog from './InfoDialog';
+import InfoDialog from '../InfoDialog';
 import AddItemDialog from './AddItemDialog';
-import HttpUtil from '../utils/HttpUtil';
-import ApiUtil from '../utils/ApiUtil';
+import HttpUtil from '../../utils/HttpUtil';
+import ApiUtil from '../../utils/ApiUtil';
 import QueueAnim from 'rc-queue-anim';
 import dayjs from 'dayjs';
 
@@ -24,7 +24,7 @@ export interface TodoItem {
 }
 
 
-interface TodoActivity {
+export interface TodoActivity {
   ActivityID: number;
   UserID: number;
   ActivityName: string;
@@ -273,7 +273,6 @@ class TodoList extends React.Component<{}, TodoListState> {
       filteredData = this.searchData.filter(activity => {
         const startTime = dayjs(`${activity.ActivityBeginDate} ${activity.ActivityBeginTime}`);
         const endTime = dayjs(`${activity.ActivityEndDate} ${activity.ActivityEndTime}`);
-        // return now.isSameOrAfter(startTime) && now.isSameOrBefore(endTime);
         return now.isAfter(startTime) && now.isBefore(endTime);
       });
     } else if (activityStatus === 'completed') {

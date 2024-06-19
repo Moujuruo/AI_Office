@@ -368,10 +368,13 @@ def insertOrUpdateTodoItem(item):
     try:
         lock_threading.acquire()
         item = json.loads(item)
-        print(item)
+        # 把item的key ItemStatus 换成 Status
+        if 'ItemStatus' in item:
+            item['Status'] = item.pop('ItemStatus')
         item_id = item.get('ItemID', 0)
         ItemContent = item.get('ItemContent', '')
         ItemLevel = item.get('ItemLevel', 0)
+        ItemStatus = item.get('ItemStatus', '未开始')
         # UserID = int(item.get('UserID', 0))
         print(item_id,ItemContent,ItemLevel)
         if item_id == 0:  # 新增
