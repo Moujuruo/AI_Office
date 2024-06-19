@@ -109,7 +109,7 @@ class NoteList extends React.Component<{}, State> {
         ApiUtil.API_NOTE_UPDATE,
         state
       )) as ApiResponse<any>;
-      if (response.status == 200) {
+      if (response.status === 200) {
         if (auto) {
           this.setState({ success: "auto_save" });
         } else {
@@ -199,11 +199,11 @@ class NoteList extends React.Component<{}, State> {
   }
 
   getColorByImportance = (importance: string) => {
-    if (importance == "Normal") {
+    if (importance === "Normal") {
       return '#f0f5ff';
-    } else if (importance == "Important") {
+    } else if (importance === "Important") {
       return '#fff2e8';
-    } else if (importance == "Crucial") {
+    } else if (importance === "Crucial") {
       return '#fff1f0';
     }
   }
