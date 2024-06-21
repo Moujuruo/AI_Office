@@ -25,6 +25,7 @@
     "antd": "^5.18.0",
     "antd-style": "^3.6.2",
     "buffer": "^6.0.3",
+    "customize-cra": "^1.0.0",
     "dayjs": "^1.11.11",
     "echarts": "^5.5.0",
     "magic-design-react": "^0.0.31",

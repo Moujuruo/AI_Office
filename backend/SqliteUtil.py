@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 import sqlite3
 import json
@@ -54,6 +55,8 @@ def createTables():
                 create_time TIMESTAMP NOT NULL DEFAULT (datetime('now','localtime')),
                 modify_time TIMESTAMP NOT NULL DEFAULT (datetime('now','localtime')),
                 Status TEXT DEFAULT '未开始',
+                ongoing_time TIMESTAMP,
+                finish_time TIMESTAMP,
                 FOREIGN KEY (UserID) REFERENCES users (id),
                 FOREIGN KEY (ActivityID) REFERENCES TodoActivity (ActivityID)
             )
@@ -344,6 +347,9 @@ def getActivitiesFromData(dataList):
                 columnValue = itemArray[columnIndex]
                 activity[columnName] = columnValue
             activities.append(activity)
+        
+        activities.sort(key=lambda x: (x['ActivityBeginDate'], x['ActivityBeginTime'], x['ActivityEndDate'], x['ActivityEndTime']), reverse=True)
+
         return activities
     except Exception as e:
         print(repr(e))
@@ -368,6 +374,11 @@ def insertOrUpdateTodoItem(item):
     try:
         lock_threading.acquire()
         item = json.loads(item)
+        current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        if item['ItemStatus'] == '进行中':
+            item['ongoing_time'] = current_time
+        elif item['ItemStatus'] == '已完成':
+            item['finish_time'] = current_time
         # 把item的key ItemStatus 换成 Status
         if 'ItemStatus' in item:
             item['Status'] = item.pop('ItemStatus')
@@ -464,7 +475,9 @@ def getTodoItemsFromData(dataList):
                 "UserID": itemArray[2],
                 "ItemContent": itemArray[3],
                 "ItemLevel": itemArray[4],
-                "ItemStatus": itemArray[-1]
+                "ItemStatus": itemArray[-3],
+                "ongoing_time": itemArray[-2],
+                "finish_time": itemArray[-1]
             }
             items.append(item)
         return items
