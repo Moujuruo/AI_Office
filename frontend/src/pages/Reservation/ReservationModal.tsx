@@ -100,9 +100,11 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
       if (response.status === 200) {
         const userID = localStorage.getItem('userID');
         const filteredTeams = response.data.filter((team) => {
-          return team.members.some((member) => member.member_id.toString() === userID && member.is_captain === 1);
+          console.log(team);
+          return team.is_captain === 1;
         });
         setTeams(filteredTeams);
+        console.log(filteredTeams);
       } else {
         message.error('获取团队列表失败');
       }

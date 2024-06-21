@@ -2,10 +2,10 @@ import React from 'react';
 import { Layout, Button, Input, message, Modal, Collapse, Badge, ConfigProvider, Tag, Segmented } from 'antd';
 import { ProTable, ProColumns } from '@ant-design/pro-components';
 import { EditOutlined, CloseOutlined, PlusOutlined, SearchOutlined, AppstoreAddOutlined } from '@ant-design/icons';
-import InfoDialog from './InfoDialog';
+import InfoDialog from '../InfoDialog';
 import AddItemDialog from './AddItemDialog';
-import HttpUtil from '../utils/HttpUtil';
-import ApiUtil from '../utils/ApiUtil';
+import HttpUtil from '../../utils/HttpUtil';
+import ApiUtil from '../../utils/ApiUtil';
 import QueueAnim from 'rc-queue-anim';
 import dayjs from 'dayjs';
 
@@ -21,10 +21,12 @@ export interface TodoItem {
   ItemContent: string;  // 事项内容，字符串类型
   ItemLevel: string;    // 事项等级，字符串类型，可选值为：重要且紧急、重要但不紧急、不重要且紧急、不重要且不紧急
   ItemStatus: string;   // 事项状态, 字符串类型，可选值为：未开始、进行中、已完成
+  ongoing_time: string; // 进行中时间，字符串类型
+  finish_time: string;
 }
 
 
-interface TodoActivity {
+export interface TodoActivity {
   ActivityID: number;
   UserID: number;
   ActivityName: string;
@@ -273,13 +275,17 @@ class TodoList extends React.Component<{}, TodoListState> {
       filteredData = this.searchData.filter(activity => {
         const startTime = dayjs(`${activity.ActivityBeginDate} ${activity.ActivityBeginTime}`);
         const endTime = dayjs(`${activity.ActivityEndDate} ${activity.ActivityEndTime}`);
-        // return now.isSameOrAfter(startTime) && now.isSameOrBefore(endTime);
         return now.isAfter(startTime) && now.isBefore(endTime);
       });
     } else if (activityStatus === 'completed') {
       filteredData = this.searchData.filter(activity => {
         const endTime = dayjs(`${activity.ActivityEndDate} ${activity.ActivityEndTime}`);
         return now.isAfter(endTime);
+      });
+    } else if (activityStatus === 'notStarted') {
+      filteredData = this.searchData.filter(activity => {
+        const startTime = dayjs(`${activity.ActivityBeginDate} ${activity.ActivityBeginTime}`);
+        return now.isBefore(startTime);
       });
     }
 
@@ -452,6 +458,7 @@ class TodoList extends React.Component<{}, TodoListState> {
                   { label: '全部', value: 'all' },
                   { label: '进行中', value: 'ongoing' },
                   { label: '已完成', value: 'completed' },
+                  { label: '未开始', value: 'notStarted' }
                 ]}
                 value={activityStatus}
                 onChange={this.handleActivityStatusChange}

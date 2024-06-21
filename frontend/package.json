@@ -5,6 +5,7 @@
   "homepage": "https://moujuruo.github.io/AI_Office/",
   "proxy": "http://127.0.0.1:5001",
   "dependencies": {
+    "@ant-design/charts": "^2.1.1",
     "@ant-design/icons": "^5.3.7",
     "@ant-design/pro-chat": "^1.13.9",
     "@ant-design/pro-components": "^2.7.9",
@@ -24,6 +25,7 @@
     "antd": "^5.18.0",
     "antd-style": "^3.6.2",
     "buffer": "^6.0.3",
+    "customize-cra": "^1.0.0",
     "dayjs": "^1.11.11",
     "echarts": "^5.5.0",
     "magic-design-react": "^0.0.31",
