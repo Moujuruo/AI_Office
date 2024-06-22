@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { ProLayout } from '@ant-design/pro-components';
+import { MenuDataItem, ProLayout } from '@ant-design/pro-components';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { Layout, Button, Dropdown, Menu, message, Upload, notification, Badge } from 'antd';
 import type { MenuProps } from 'antd';
 import type { UploadRequestOption } from 'rc-upload/lib/interface';
-import { UserOutlined, DownOutlined, SmileOutlined, UploadOutlined, BellOutlined } from '@ant-design/icons';
+import { UserOutlined, DownOutlined, SmileOutlined, UploadOutlined, BellOutlined, HomeOutlined, AreaChartOutlined, CalendarOutlined, FileTextOutlined, TeamOutlined, ContainerOutlined } from '@ant-design/icons';
 import ApiUtil from '../utils/ApiUtil';
 import HttpUtil from '../utils/HttpUtil';
 import { ApiResponse } from '../utils/ApiUtil';
@@ -16,6 +16,8 @@ interface inviteinfo {
     team_id: number,
     user_id: number
 }
+
+
 
 const MainLayout: React.FC = () => {
     const navigate = useNavigate();
@@ -48,11 +50,17 @@ const MainLayout: React.FC = () => {
     const checkInvitations = async () => {
         try {
             const response = await HttpUtil.post(ApiUtil.API_GET_BE_INVITED_TEAMS, { userID: userID }) as ApiResponse<inviteinfo[]>;
+            console.log('response:', response);
             if (response.status === 200) {
+                console.log('invitations1:', invitations);
+
                 const newinvitations = response.data;
                 setInvitations(newinvitations);
-                if (invitations.length > 0) {
-                    invitations.forEach((invitation: any) => {
+
+
+                if (newinvitations.length > 0) {
+                    console.log('invitations:', newinvitations);
+                    newinvitations.forEach((invitation: any) => {
                         const { team_id, captain_id } = invitation;
                         const key = `invitation-${team_id}`;
 
@@ -88,7 +96,7 @@ const MainLayout: React.FC = () => {
                 });
                 if (notificationKey !== '')
                     api.destroy(notificationKey);  // Destroy the notification
-                setInvitations(invitations.filter(invitation => invitation.team_id !== teamId)); 
+                setInvitations(invitations.filter(invitation => invitation.team_id !== teamId));
             } else {
                 api.error({
                     message: '接受邀请失败',
@@ -114,7 +122,7 @@ const MainLayout: React.FC = () => {
                 });
                 if (notificationKey !== '')
                     api.destroy(notificationKey);  // Destroy the notification
-                setInvitations(invitations.filter(invitation => invitation.team_id !== teamId)); 
+                setInvitations(invitations.filter(invitation => invitation.team_id !== teamId));
             } else {
                 api.error({
                     message: '拒绝邀请失败',
@@ -228,12 +236,31 @@ const MainLayout: React.FC = () => {
         },
     ]
 
+    const [collapsed, setCollapsed] = useState(false);
+
+    const menuData: MenuDataItem[] = [
+        { path: "/", name: "🏠  首页", default: true, icon: <HomeOutlined /> },
+        { path: "/data-analysis", name: "📊  数据分析", icon: <AreaChartOutlined /> },
+        { path: "/staff-list", name: "📆  日程表", icon: <CalendarOutlined /> },
+        { path: "/notelist-page", name: "📒 笔记备忘录", icon: <FileTextOutlined /> },
+        { path: "/reservation-page", name: "🚪  会议室预定", icon: <ContainerOutlined /> },
+        { path: "/team-page", name: "👨‍👩‍👧‍👦 团队管理", icon: <TeamOutlined /> },
+    ];
+    const handleMenuDataRender = (menuData: MenuDataItem[]): MenuDataItem[] => {
+        return menuData.map(item => ({
+            ...item,
+            icon: collapsed ? item.icon : null,
+        }));
+    };
+
     return (
         <ProLayout
             title="智能办公管理系统"
             logo={<div className="logo" />}
             layout="mix"
             navTheme="light"
+            inlineCollapsed={collapsed}
+            onCollapse={() => setCollapsed(!collapsed)}
             token={{
                 header: {
                     heightLayoutHeader: 80, // 调整Header的高度
@@ -262,10 +289,12 @@ const MainLayout: React.FC = () => {
                     </div>
                     <div style={{ display: "flex", alignItems: "center" }}>
                         <Dropdown
-                            overlay={
-                                <Menu>
-                                    {invitations.length==0 ? <a>暂无通知</a>: invitations.map((invitation) => (
-                                        <Menu.Item key={invitation.team_id}>
+                            menu={{
+                                items: invitations.length === 0
+                                    ? [{ key: 'empty', label: '暂无通知' }]
+                                    : invitations.map((invitation) => ({
+                                        key: invitation.team_id,
+                                        label: (
                                             <div>
                                                 团队 {invitation.team_id} 的邀请
                                                 <Button
@@ -293,11 +322,10 @@ const MainLayout: React.FC = () => {
                                                     拒绝
                                                 </Button>
                                             </div>
-                                        </Menu.Item>
-                                    ))}
-                                </Menu>
-                            }
-                            trigger={["click"]}
+                                        ),
+                                    })),
+                            }}
+                            trigger={['click']}
                         >
                             <Badge count={invitations.length} offset={[-25, -2]} size='small'>
                                 <BellOutlined
@@ -322,7 +350,7 @@ const MainLayout: React.FC = () => {
                             />
                         )}
                         <span>你好, {username}</span>
-                        <Dropdown overlay={<Menu items={items} />} trigger={["click"]}>
+                        <Dropdown menu={{ items }} trigger={["click"]}>
                             <a
                                 onClick={(e) => e.preventDefault()}
                                 style={{ marginLeft: "8px" }}
@@ -334,13 +362,7 @@ const MainLayout: React.FC = () => {
                 </Header>
             )}
             menuItemRender={(item, dom) => <Link to={item.path || "/"}>{dom}</Link>}
-            menuDataRender={() => [
-                { path: "/", name: "🏠  首页", default: true },
-                { path: "/staff-list", name: "📆  日程表" },
-                { path: "/notelist-page", name: "📒 笔记备忘录" },
-                { path: "/reservation-page", name: "🚪  会议室预定" },
-                { path: "/team-page", name: "👨‍👩‍👧‍👦 团队管理" },
-            ]}
+            menuDataRender={() => handleMenuDataRender(menuData)}
         >
             {contextHolder}
             <Content style={{ padding: "0 24px 24px" }}>

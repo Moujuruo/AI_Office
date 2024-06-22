@@ -3,13 +3,9 @@ import { Modal, Form, Select, DatePicker, Input, Slider, message } from 'antd';
 import moment from 'moment';
 import HttpUtil from '../../utils/HttpUtil';
 import ApiUtil from '../../utils/ApiUtil';
+import { ApiResponse } from '../../utils/ApiUtil';
 
 const { Option } = Select;
-
-interface ApiResponse<T> {
-  status: number;
-  data: T;
-}
 
 interface Room {
   id: number;
@@ -25,6 +21,18 @@ interface Reservation {
   end_time: string;
   date: string;
   subject: string;
+}
+
+interface Member {
+  member_id: number;
+  is_captain: number;
+}
+
+interface Team {
+  team_id: number;
+  team_name: string;
+  is_captain: number;
+  members: Member[];
 }
 
 interface ReservationModalProps {
@@ -49,6 +57,9 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
   const [sliderValue, setSliderValue] = useState<number[]>([8, 9]);
   const [room, setRoom] = useState<number>(meetingRooms[0]?.id || 0);
   const [bookedTimes, setBookedTimes] = useState<[number, number][]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [bookingType, setBookingType] = useState<string>('personal');
+
 
   useEffect(() => {
     form.setFieldsValue({
@@ -76,6 +87,29 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
       }
     } catch (error) {
       message.error('获取预定信息失败');
+    }
+  };
+
+  const fetchTeams = async () => {
+    try {
+      const response = await HttpUtil.post(ApiUtil.API_GET_ALL_TEAMS,
+        {
+          userID: localStorage.getItem('userID')
+        }
+      ) as ApiResponse<Team[]>;
+      if (response.status === 200) {
+        const userID = localStorage.getItem('userID');
+        const filteredTeams = response.data.filter((team) => {
+          console.log(team);
+          return team.is_captain === 1;
+        });
+        setTeams(filteredTeams);
+        console.log(filteredTeams);
+      } else {
+        message.error('获取团队列表失败');
+      }
+    } catch (error) {
+      message.error('获取团队列表失败');
     }
   };
   
@@ -118,11 +152,12 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
     try {
       const newReservation = {
         room_id: values.room_id,
-        user_id: localStorage.getItem('userID') || 1, // Assuming user_id is stored in localStorage or a default value
+        user_id: localStorage.getItem('userID') || 1,
         start_time: moment().startOf('day').add(values.time[0], 'hours').format('HH:mm'),
         end_time: moment().startOf('day').add(values.time[1], 'hours').format('HH:mm'),
         date: values.date.format('YYYY-MM-DD'),
         subject: values.title,
+        type: bookingType,
       };
       const response = await HttpUtil.post(ApiUtil.API_INSERT_RESERVATION, newReservation) as ApiResponse<any>;
       if (response.status === 200) {
@@ -136,19 +171,44 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
     }
   };
 
+  const handleBookingTypeChange = (value: string) => {
+    setBookingType(value);
+    if (value === 'team') {
+      fetchTeams();
+    }
+  };
+
   return (
     <Modal title="创建预约" open={visible} onOk={form.submit} onCancel={onCancel}>
-      <Form form={form} layout="vertical" onFinish={handleSubmit}>
-        <Form.Item name="room_id" label="会议室" rules={[{ required: true, message: '请选择会议室' }]}>
-          <Select onChange={(value: number) => setRoom(value)} value={room}>
-            {meetingRooms.map(room => (
-              <Option key={room.id} value={room.id}>{room.name}</Option>
+    <Form form={form} layout="vertical" onFinish={handleSubmit}>
+      <Form.Item name="title" label="会议主题" rules={[{ required: true, message: '请输入会议主题' }]}>
+        <Input />
+      </Form.Item>
+      <Form.Item name="bookingType" label="预约类型" rules={[{ required: true, message: '请选择预约类型' }]}>
+        <Select onChange={handleBookingTypeChange}>
+          <Option value="personal">个人预约</Option>
+          <Option value="team">团队预约</Option>
+        </Select>
+      </Form.Item>
+      {bookingType === 'team' && (
+        <Form.Item name="teamId" label="选择团队" rules={[{ required: true, message: '请选择团队' }]}>
+          <Select>
+            {teams.map(team => (
+              <Option key={team.team_id} value={team.team_id}>{team.team_name}</Option>
             ))}
           </Select>
         </Form.Item>
-        <Form.Item name="date" label="日期" rules={[{ required: true, message: '请选择日期' }]}>
-          <DatePicker onChange={handleDateChange} />
-        </Form.Item>
+      )}
+      <Form.Item name="room_id" label="会议室" rules={[{ required: true, message: '请选择会议室' }]}>
+        <Select onChange={(value: number) => setRoom(value)} value={room}>
+          {meetingRooms.map(room => (
+            <Option key={room.id} value={room.id}>{room.name}</Option>
+          ))}
+        </Select>
+      </Form.Item>
+      <Form.Item name="date" label="日期" rules={[{ required: true, message: '请选择日期' }]}>
+        <DatePicker onChange={handleDateChange} />
+      </Form.Item>
         <Form.Item name="time" label="选择时间段" rules={[{ required: true, message: '请选择时间段' }]}>
           <Slider
             range
@@ -162,9 +222,7 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
             tooltip={{ formatter: formatSliderTooltip }}
           />
         </Form.Item>
-        <Form.Item name="title" label="会议主题" rules={[{ required: true, message: '请输入会议主题' }]}>
-          <Input />
-        </Form.Item>
+       
       </Form>
     </Modal>
   );

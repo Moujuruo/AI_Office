@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Form, Input, Radio, message } from 'antd';
-import ApiUtil from '../utils/ApiUtil';
-import HttpUtil from '../utils/HttpUtil';
+import ApiUtil from '../../utils/ApiUtil';
+import HttpUtil from '../../utils/HttpUtil';
 interface AddItemDialogProps {
     visible: boolean;
     onAdd: (item: any) => void;
@@ -66,7 +66,7 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({ visible, onAdd, onCancel,
     return (
         <Modal
             title="添加事项"
-            visible={visible}
+            open={visible}
             onOk={handleOk}
             onCancel={() => {
                 form.resetFields();
@@ -94,6 +94,17 @@ const AddItemDialog: React.FC<AddItemDialogProps> = ({ visible, onAdd, onCancel,
                         <Radio value="重要且紧急">重要且紧急</Radio>
                         <Radio value="不重要且不紧急">不重要且不紧急</Radio>
                         <Radio value="不重要且紧急">不重要且紧急</Radio>
+                    </Radio.Group>
+                </Form.Item>
+                <Form.Item
+                    name="ItemStatus"
+                    label="事项状态"
+                    rules={[{ required: true, message: '请选择事项状态' }]}
+                >
+                    <Radio.Group defaultValue="未开始">
+                        <Radio value="未开始">未开始</Radio>
+                        <Radio value="进行中">进行中</Radio>
+                        <Radio value="已完成">已完成</Radio>
                     </Radio.Group>
                 </Form.Item>
             </Form>

@@ -13,6 +13,9 @@ export default class ApiUtil {
     static API_Activity_UPDATE = ApiUtil.URL_ROOT + '/updateActivity';
     static API_Activity_LIST = ApiUtil.URL_ROOT + '/getActivityList/';
     static API_Activity_DELETE = ApiUtil.URL_ROOT + '/deleteActivity/';
+
+    static API_Activity_STATISTICS = ApiUtil.URL_ROOT + '/getActivityStatistics/';
+
     static API_Item_UPDATE = ApiUtil.URL_ROOT + '/updateItem';
     static API_Item_DELETE = ApiUtil.URL_ROOT + '/deleteItem/';
     static API_Item_LIST_BY_ACTIVITY = ApiUtil.URL_ROOT + '/getItemListByActivity/';
@@ -48,5 +51,8 @@ export default class ApiUtil {
     static API_GET_BE_INVITED_TEAMS = ApiUtil.URL_ROOT + '/getBeInvitedTeams';
     static API_ACCEPT_INVITATION = ApiUtil.URL_ROOT + '/agreeinvitation';
     static API_REJECT_INVITATION = ApiUtil.URL_ROOT + '/disagreeinvitation';
-
+    static API_DELETE_TEAM = ApiUtil.URL_ROOT + '/deleteTeam';
+    static API_GET_CAPTAIN_TEAMS = ApiUtil.URL_ROOT + '/getCaptainTeams';
+    static API_DELETE_MEMBER = ApiUtil.URL_ROOT + '/deleteMember';
+    static API_UPDATE_TEAM_NAME = ApiUtil.URL_ROOT + '/updateTeamName';
 }

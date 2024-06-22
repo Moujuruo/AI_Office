@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 import sqlite3
 import json
@@ -53,6 +54,9 @@ def createTables():
                 ItemLevel TEXT,
                 create_time TIMESTAMP NOT NULL DEFAULT (datetime('now','localtime')),
                 modify_time TIMESTAMP NOT NULL DEFAULT (datetime('now','localtime')),
+                Status TEXT DEFAULT '未开始',
+                ongoing_time TIMESTAMP,
+                finish_time TIMESTAMP,
                 FOREIGN KEY (UserID) REFERENCES users (id),
                 FOREIGN KEY (ActivityID) REFERENCES TodoActivity (ActivityID)
             )
@@ -262,6 +266,7 @@ def deleteStaff(staff_id):
     
 def updateActivity(activity):
     try:
+        lock_threading.acquire()
         print(activity)  # {"UserID": 1, "ActivityName": "Meeting", "ActivityBeginDate": "2024-05-21", "ActivityBeginTime": "10:00:00", "ActivityEndDate": "2024-05-21", "ActivityEndTime": "11:00:00"}
         activity = json.loads(activity)
         activityID = activity.get('ActivityID', 0)
@@ -315,9 +320,12 @@ def updateActivity(activity):
     except Exception as e:
         print(repr(e))
         return '新增或修改失败'
+    finally:
+        lock_threading.release()
 
 def getActivities(UserID):
     try:
+        lock_threading.acquire()
         sql = 'SELECT * FROM TodoActivity where UserID = %d' % UserID
         cursor.execute(sql)
         activities = cursor.fetchall()
@@ -325,20 +333,33 @@ def getActivities(UserID):
     except Exception as e:
         print(repr(e))
         return []
+    finally:
+        lock_threading.release()
 
 def getActivitiesFromData(dataList):
-    activities = []
-    for itemArray in dataList:   # dataList数据库返回的数据集，是一个二维数组
-        # itemArray: (1, 1, 'Meeting', '2024-05-21', '10:00:00', '2024-05-21', '11:00:00')
-        activity = {}
-        for columnIndex, columnName in enumerate(activityColumns):
-            columnValue = itemArray[columnIndex]
-            activity[columnName] = columnValue
-        activities.append(activity)
-    return activities
+    try:
+        lock_threading.acquire()
+        activities = []
+        for itemArray in dataList:   # dataList数据库返回的数据集，是一个二维数组
+            # itemArray: (1, 1, 'Meeting', '2024-05-21', '10:00:00', '2024-05-21', '11:00:00')
+            activity = {}
+            for columnIndex, columnName in enumerate(activityColumns):
+                columnValue = itemArray[columnIndex]
+                activity[columnName] = columnValue
+            activities.append(activity)
+        
+        activities.sort(key=lambda x: (x['ActivityBeginDate'], x['ActivityBeginTime'], x['ActivityEndDate'], x['ActivityEndTime']), reverse=True)
+
+        return activities
+    except Exception as e:
+        print(repr(e))
+        return []
+    finally:
+        lock_threading.release()
 
 def deleteActivity(activity_id):
     try:
+        lock_threading.acquire()
         sql = 'DELETE FROM TodoActivity WHERE ActivityID = ?'
         cursor.execute(sql, (activity_id,))
         conn.commit()
@@ -346,14 +367,25 @@ def deleteActivity(activity_id):
     except Exception as e:
         print(repr(e))
         return '删除失败'
+    finally:
+        lock_threading.release()
 
 def insertOrUpdateTodoItem(item):
     try:
+        lock_threading.acquire()
         item = json.loads(item)
-        print(item)
+        current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        if item['ItemStatus'] == '进行中':
+            item['ongoing_time'] = current_time
+        elif item['ItemStatus'] == '已完成':
+            item['finish_time'] = current_time
+        # 把item的key ItemStatus 换成 Status
+        if 'ItemStatus' in item:
+            item['Status'] = item.pop('ItemStatus')
         item_id = item.get('ItemID', 0)
         ItemContent = item.get('ItemContent', '')
         ItemLevel = item.get('ItemLevel', 0)
+        ItemStatus = item.get('ItemStatus', '未开始')
         # UserID = int(item.get('UserID', 0))
         print(item_id,ItemContent,ItemLevel)
         if item_id == 0:  # 新增
@@ -402,10 +434,13 @@ def insertOrUpdateTodoItem(item):
     except Error as e:
         print(e)
         return '新增或修改失败'
+    finally:
+        lock_threading.release()
 
 
 def deleteTodoItem(item_id):
     try:
+        lock_threading.acquire()
         sql = 'DELETE FROM TodoItem WHERE ItemID = ?'
         cursor.execute(sql, (item_id,))
         conn.commit()
@@ -413,38 +448,56 @@ def deleteTodoItem(item_id):
     except Error as e:
         print(e)
         return '删除失败'
+    finally:
+        lock_threading.release()
     
 
 def getTodoItems():
     try:
+        lock_threading.acquire()
         sql = 'SELECT * FROM TodoItem'
         cursor.execute(sql)
         return cursor.fetchall()
     except Error as e:
         print(e)
         return []
+    finally:
+        lock_threading.release()
 
 def getTodoItemsFromData(dataList):
-    items = []
-    for itemArray in dataList:
-        item = {
-            "ItemID": itemArray[0],
-            "ActivityID": itemArray[1],
-            "UserID": itemArray[2],
-            "ItemContent": itemArray[3],
-            "ItemLevel": itemArray[4]
-        }
-        items.append(item)
-    return items
+    try:
+        lock_threading.acquire()
+        items = []
+        for itemArray in dataList:
+            item = {
+                "ItemID": itemArray[0],
+                "ActivityID": itemArray[1],
+                "UserID": itemArray[2],
+                "ItemContent": itemArray[3],
+                "ItemLevel": itemArray[4],
+                "ItemStatus": itemArray[-3],
+                "ongoing_time": itemArray[-2],
+                "finish_time": itemArray[-1]
+            }
+            items.append(item)
+        return items
+    except Error as e:
+        print(e)
+        return []
+    finally:
+        lock_threading.release()
 
 def getTodoItemsByActivity(activity_id):
     try:
+        lock_threading.acquire()
         sql = 'SELECT * FROM TodoItem WHERE ActivityID = ?'
         cursor.execute(sql, (activity_id,))
         return cursor.fetchall()
     except Error as e:
         print(e)
         return []
+    finally:
+        lock_threading.release()
 
 
 

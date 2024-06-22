@@ -12,7 +12,7 @@ import os
 import llm_interface as LLM
 from arrow import Arrow
 
-app = Flask(__name__, template_folder='../front-end', static_folder='../front-end')
+app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = './uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
 CORS(app)  # 启用CORS
@@ -192,7 +192,38 @@ def deleteActivity(id):
     except Exception as e:
         return json.dumps({'code': 1, 'message': str(e)}), 500
 
+def get_dates_between(start_date, end_date):
+    from datetime import datetime, timedelta
+    date_list = []
+    current_date = datetime.strptime(start_date, '%Y-%m-%d')
+    end_date = datetime.strptime(end_date, '%Y-%m-%d')
+    while current_date <= end_date:
+        date_list.append(current_date.strftime('%Y-%m-%d'))
+        current_date += timedelta(days=1)
+    return date_list
 
+@app.route(apiPrefix + 'getActivityStatistics/<int:job>')
+def getActivityStatistics(job):
+    try:
+        array = DBUtil.getActivities(job)
+        jsonActivities = DBUtil.getActivitiesFromData(array)
+
+        # Initialize a dictionary to hold the counts
+        activity_counts = {}
+
+        for activity in jsonActivities:
+            begin_date = activity["ActivityBeginDate"]
+            end_date = activity["ActivityEndDate"]
+            dates_in_range = get_dates_between(begin_date, end_date)
+            for date in dates_in_range:
+                if date in activity_counts:
+                    activity_counts[date] += 1
+                else:
+                    activity_counts[date] = 1
+
+        return json.dumps(activity_counts)
+    except Exception as e:
+        return json.dumps({'code': 1, 'message': str(e)}), 500
 
 ##################  Item接口  ##################
 @app.route(apiPrefix + 'updateItem', methods=['POST'])
@@ -432,7 +463,8 @@ def getAllTeams():
         for member in members:
             team_info["members"].append({
                 "member_id": member[0],
-                "is_captain": member[1]
+                "is_captain": member[1],
+                "username": member[2],
             })
         
         team_list.append(team_info)
@@ -514,6 +546,57 @@ def disagreeinvitation():
     if result is False:
         return jsonify({"data": "Failed to disagree invitation", "status": 500}), 500
     return jsonify({"data": "Success to disagree invitation", "status": 200}), 200
+
+@app.route(apiPrefix + 'deleteTeam', methods=['POST'])
+def deleteTeam():
+    data = request.get_json()
+    print(data)
+    teamID = data['teamID']
+    userID = data['userID']
+    userID = int(userID)
+    captainID = Team.get_team_captain(teamID)[0]
+    
+    if captainID != userID:
+        return jsonify({"data": "You are not the captain", "status": 400}), 400
+    result = Team.delete_team(teamID)
+    if result is False:
+        return jsonify({"data": "Failed to delete team", "status": 500}), 500
+    return jsonify({"data": "Success to delete team", "status": 200}), 200
+
+# deleteMember
+@app.route(apiPrefix + 'deleteMember', methods=['POST'])
+def deleteMember():
+    data = request.get_json()
+    teamID = data['teamID']
+    userID = data['userID']
+    userID = int(userID)
+    memberID = data['memberID']
+    captainID = Team.get_team_captain(teamID)[0]
+    if captainID != userID:
+        return jsonify({"data": "非队长无权限删除", "status": 400}), 400
+    if memberID == captainID:
+        return jsonify({"data": "队长不能被删除", "status": 400}), 400
+
+    result = Team.deleteTeamMember(teamID, memberID)
+    if result is False:
+        return jsonify({"data": "Failed to delete member", "status": 500}), 500
+    return jsonify({"data": "Success to delete member", "status": 200}), 200
+
+# updateTeamName
+@app.route(apiPrefix + 'updateTeamName', methods=['POST'])
+def updateTeamName():
+    data = request.get_json()
+    teamID = data['teamID']
+    userID = data['userID']
+    userID = int(userID)
+    teamName = data['teamName']
+    captainID = Team.get_team_captain(teamID)[0]
+    if captainID != userID:
+        return jsonify({"data": "非队长无权限修改", "status": 400}), 400
+    result = Team.change_team_name(teamID, teamName)
+    if result is False:
+        return jsonify({"data": "Failed to update team name", "status": 500}), 500
+    return jsonify({"data": "Success to update team name", "status": 200}), 200
 
 
 ##################  Note接口  ##################
