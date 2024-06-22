@@ -62,3 +62,157 @@ flask 后端框架，todo：需要重构部分代码，目前较冗余
 
 使用 sqlite 数据库，建库脚本见后端各模块。测试用的数据库为 `Ai_work.db`
 
+
+## 部署
+
+
+### 后端部分
+
+更新 `run_app.py` 以提供静态文件服务
+```python
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists("frontend/build/" + path):
+        return send_from_directory('frontend/build', path)
+    else:
+        return send_from_directory('frontend/build', 'index.html')
+```
+
+开头要改为相对导入
+```python
+from . import SqliteUtil as DBUtil
+from . import sqlite_roombooking as RBooking
+from . import sqlite_note as RNote
+from . import sqlite_team as Team
+# 其他导入...
+```
+
+更新路由使用绝对路径:
+```python
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    # 使用绝对路径指向uploads目录
+    return send_from_directory(os.path.abspath('../uploads'), filename)
+
+@app.route('/assets/<filename>')
+def assets_file(filename):
+    # 使用绝对路径指向assets目录
+    return send_from_directory(os.path.abspath('../assets'), filename)
+```
+
+修改 Flask 入口为：
+```python
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5001)
+```
+
+传输到服务器:
+```bash
+scp -r <your-local-flask-project-dir> <your-username>@<your-server-ip>:<path-to-your-app>
+```
+
+服务器安装好相关依赖，以及 `gunicorn`:
+```bash
+pip install gunicorn
+```
+
+项目根目录下放置 `wsgi.py`:
+```python
+from backend.run_app import app
+
+if __name__ == "__main__":
+    app.run()
+```
+
+现在的项目结构为:
+```
+AI_Office/
+├── backend/
+│   ├── run_app.py
+│   ├── SqliteUtil.py
+│   ├── ...
+├── frontend/
+├── wsgi.py
+```
+
+### 前端部分
+
+本地构建 React 静态文件
+```bash
+npm install
+npm run build
+```
+
+将生成的 build 上传至服务器
+```bash
+scp -r build <your-username>@<your-server-ip>:<path-to-your-app>/front_end
+```
+
+服务器安装 Nginx:
+```bash
+sudo apt update
+sudo apt install nginx
+```
+```bash
+sudo vim /etc/nginx/sites-available/AI_Office
+```
+
+
+```
+server {
+    listen 80;
+    server_name <your_ip>;
+
+    location / {
+        root /home/moujuruo/AI_Office/front_end/build;
+        try_files $uri /index.html;
+    }
+
+    location /api/ {
+        include proxy_params;
+        proxy_pass http://localhost:5001;
+    }
+
+    # Add configurations for uploads and assets
+    location /uploads/ {
+        alias /home/moujuruo/AI_Office/uploads/;
+    }
+
+    location /assets/ {
+        alias /home/moujuruo/AI_Office/assets/;
+    }
+
+    location /static/ {
+        alias /home/moujuruo/AI_Office/front_end/build/static/;
+        expires max;
+        access_log off;
+    }
+
+    error_page 404 /index.html;
+    location = /index.html {
+        root /home/moujuruo/AI_Office/front_end/build;
+        internal;
+    }
+
+    client_max_body_size 50M;
+}
+```
+
+```bash
+sudo ln -s /etc/nginx/sites-available/AI_Office /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+### 启动
+
+在项目根目录下：
+```bash
+gunicorn --workers 3 --bind 0.0.0.0:5001 wsgi:app
+```
+若要后台运行，为：
+```bash
+nohup gunicorn --workers 3 --bind 0.0.0.0:5001 wsgi:app &
+```
+

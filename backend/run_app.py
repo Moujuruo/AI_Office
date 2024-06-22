@@ -12,7 +12,7 @@ import os
 import llm_interface as LLM
 from arrow import Arrow
 
-app = Flask(__name__, template_folder='../front-end', static_folder='../front-end')
+app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = './uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
 CORS(app)  # 启用CORS
