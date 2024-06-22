@@ -146,7 +146,7 @@ npm run build
 
 将生成的 build 上传至服务器
 ```bash
-scp -r build <your-username>@<your-server-ip>:<path-to-your-app>/front_end
+scp -r build <your-username>@<your-server-ip>:<path-to-your-app>/frontend
 ```
 
 服务器安装 Nginx:
@@ -165,7 +165,7 @@ server {
     server_name <your_ip>;
 
     location / {
-        root /home/moujuruo/AI_Office/front_end/build;
+        root /home/moujuruo/AI_Office/frontend/build;
         try_files $uri /index.html;
     }
 
@@ -184,14 +184,14 @@ server {
     }
 
     location /static/ {
-        alias /home/moujuruo/AI_Office/front_end/build/static/;
+        alias /home/moujuruo/AI_Office/frontend/build/static/;
         expires max;
         access_log off;
     }
 
     error_page 404 /index.html;
     location = /index.html {
-        root /home/moujuruo/AI_Office/front_end/build;
+        root /home/moujuruo/AI_Office/frontend/build;
         internal;
     }
 
