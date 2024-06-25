@@ -40,6 +40,16 @@ def insertMeetingRoom(name, floor, capacity, info):
                     (name, floor, capacity, info))
     conn.commit()
 
+def getroomname(room_id):
+    try:
+        lock_threading.acquire()
+        cursor.execute("SELECT name FROM meeting_room WHERE id=?", (room_id,))
+        return cursor.fetchone()[0]
+    except sqlite3.Error as e:
+        print(e)
+        return None
+    finally:
+        lock_threading.release()
 
 def getallrooms():
     # cursor.execute("SELECT * FROM meeting_room")
@@ -101,5 +111,17 @@ def getuserreservations(user_id):
     except sqlite3.Error as e:
         print(e)
         return None
+    finally:
+        lock_threading.release()
+
+def deletereservation(user_id, reservation_id):
+    try:
+        lock_threading.acquire()
+        cursor.execute("DELETE FROM booking WHERE user_id=? AND id=?", (user_id, reservation_id))
+        conn.commit()
+        return True
+    except sqlite3.Error as e:
+        print(e)
+        return False
     finally:
         lock_threading.release()
