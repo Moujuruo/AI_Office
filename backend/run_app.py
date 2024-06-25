@@ -338,26 +338,35 @@ def insertReservation():
     reservation = RBooking.insertreservation(room_id, user_id, start_time, end_time, date, subject)
     if reservation == False:
         return jsonify({'code': 1, 'message': '添加会议室预约失败', 'status': 500 })
-    activities = DBUtil.getActivities(user_id)
-    flag = False
-    for activity in activities:
-        if activity[2] == "会议":
-            flag = True
-            break
-    if flag == False:
-        meeting_activity = {}
-        meeting_activity['UserID'] = user_id
-        meeting_activity['ActivityName'] = "会议"
-        meeting_activity['ActivityBeginDate'] = date
-        meeting_activity['ActivityEndDate'] = date
-        meeting_activity['ActivityBeginTime'] = start_time
-        meeting_activity['ActivityEndTime'] = end_time
-        result = DBUtil.updateActivity(json.dumps(meeting_activity))
-        if result != '新增成功' and result != '修改成功':
-            return jsonify({'code': 1, 'message': '添加会议室预约到日程失败', 'status': 500 })
+    room_name = RBooking.getroomname(room_id)
+    activity_name = "会议 - " + room_name + " - " + subject
+    meeting_activity = {}
+    meeting_activity['UserID'] = user_id
+    meeting_activity['ActivityName'] = activity_name
+    meeting_activity['ActivityBeginDate'] = date
+    meeting_activity['ActivityEndDate'] = date
+    meeting_activity['ActivityBeginTime'] = start_time
+    meeting_activity['ActivityEndTime'] = end_time
+    result = DBUtil.updateActivity(json.dumps(meeting_activity))
+    if result != '新增成功' and result != '修改成功':
+        return jsonify({'code': 1, 'message': '添加会议室预约到日程失败', 'status': 500 })
 
     return jsonify({'code': 0, 'message': '添加会议室预约成功', 'status': 200, 'data': reservation
     }), 200
+
+
+#  deleteReservation
+@app.route(apiPrefix + 'deleteReservation', methods=['POST'])
+def deleteReservation():
+    data = request.get_json()
+    print(data)
+    reservation_id = data.get('reservation_id')
+    user_id = data.get('user_id')
+    result = RBooking.deletereservation(user_id, reservation_id)
+    if result == False:
+        return jsonify({'code': 1, 'message': '删除会议室预约失败', 'status': 500 })
+    return jsonify({'code': 0, 'message': '删除会议室预约成功', 'status': 200 }), 200    
+    
 
 @app.route(apiPrefix + 'getUserReservations', methods=['POST'])
 def getUserReservations(): 

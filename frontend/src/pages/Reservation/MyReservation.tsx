@@ -64,7 +64,7 @@ const MyReservationsModal: React.FC<MyReservationsModalProps> = ({
 
   const handleDelete = async (reservationId: number) => {
     try {
-      const response = await HttpUtil.post(ApiUtil.API_DELETE_RESERVATION, { reservation_id: reservationId }) as ApiResponse<any>;
+      const response = await HttpUtil.post(ApiUtil.API_DELETE_RESERVATION, { reservation_id: reservationId, user_id: localStorage.getItem('userID')}) as ApiResponse<any>;
       if (response.status === 200) {
         message.success('删除预约成功');
         fetchMyReservations();
