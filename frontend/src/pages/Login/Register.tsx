@@ -46,8 +46,8 @@ const Register: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>{dom[0]}</div>
                 <Space>
+                  <Button onClick={() => navigate('/login')}>登录</Button>
                   <Button type="primary" htmlType="submit" loading={loading}>注册</Button>
-                  <Button type="primary" onClick={() => navigate('/login')}>登录</Button>
                 </Space>
               </div>
             );
