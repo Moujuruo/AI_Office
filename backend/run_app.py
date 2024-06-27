@@ -11,6 +11,10 @@ from werkzeug.utils import secure_filename
 import os
 import llm_interface as LLM
 from arrow import Arrow
+import pytesseract
+from PIL import Image
+import base64
+from openai import OpenAI
 import arrow
 
 app = Flask(__name__)
@@ -175,7 +179,7 @@ def getActivityList(job):
     except Exception as e:
         return json.dumps({'code': 1, 'message': str(e)}), 500
 
-@app.route(apiPrefix + 'deleteActivity/<int:id>')
+@app.route(apiPrefix + 'deleteActivity/<int:id>', methods=['DELETE'])
 def deleteActivity(id):
     try:
         result = DBUtil.deleteActivity(id)
@@ -347,6 +351,7 @@ def insertReservation():
 
     if reservation == False:
         return jsonify({'code': 1, 'message': '添加会议室预约失败', 'status': 500 })
+    print(room_id)
     room_name = RBooking.getroomname(room_id)
     activity_name = "会议 - " + room_name + " - " + subject
     meeting_activity = {}
@@ -356,6 +361,7 @@ def insertReservation():
     meeting_activity['ActivityEndDate'] = date
     meeting_activity['ActivityBeginTime'] = start_time
     meeting_activity['ActivityEndTime'] = end_time
+    print(meeting_activity)
     result = DBUtil.updateActivity(json.dumps(meeting_activity))
 
     if type == 'team':
@@ -438,8 +444,6 @@ def getUserReservations():
     reservations_list.sort(key=lambda x: x['start_time'])
     print(reservations_list)
     return jsonify({'code': 0, 'message': '获取用户预约列表成功', 'status': 200, 'data': reservations_list}), 200
-
-
 
 
 ##### AI 接口 #####
@@ -798,6 +802,27 @@ def getNoteList(user):
     except Exception as e:
         return json.dumps({'status': 500, 'data': None})
 
+
+@app.route(apiPrefix + 'getGroupNoteList/<user>')
+def getGroupNoteList(user):
+    try:
+        array = RNote.getGroupNoteTitleList(user)
+        note_titles = [t[0] for t in array]
+        note_importances = [t[1] for t in array]
+        note_savetimes = [t[2] for t in array]
+        note_editor = [t[3] for t in array]
+        response = {
+           'status': 200,
+           'titles': note_titles,
+           'importances': note_importances,
+           'save_times': note_savetimes,
+           'editors': note_editor
+        }
+        return json.dumps(response)
+    except Exception as e:
+        print(e)
+        return json.dumps({'status': 500, 'data': None})
+
 @app.route(apiPrefix + 'getNoteContent/<user>/<title>')
 def getNoteContent(user, title):
     try:
@@ -817,6 +842,60 @@ def deleteNoteByTitle(user, title):
         return json.dumps({'status': 200, 'data': None})
     except Exception as e:
         return json.dumps({'status': 500, 'data': None})
+
+
+
+@app.route(apiPrefix + 'uploadNoteImage', methods=['POST'])
+def uploadNoteImage():
+    if 'file' not in request.files:
+        return jsonify({'status': 'fail', 'message': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'status': 'fail', 'message': 'No selected file'}), 400
+    if file and allowed_file(file.filename):
+        try:
+            # image = Image.open(file)
+            # text = pytesseract.image_to_string(image, 'chi_sim')
+            # print(text)
+
+            client = OpenAI(api_key='11YPrT6yoBSigAicbBtMtNKm8tN3UPf6qQSjFMghmeqlVWwr31cUVNIdOFvFvddFv', base_url="https://api.stepfun.com/v1")
+            img_data = file.read()
+            img_str = base64.b64encode(img_data).decode('ascii')
+            completion = client.chat.completions.create(
+            model="step-1v-32k",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "你是一名OCR转换专家",
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "请识别图中的文字，并转化为html格式以<p>与</p>作为开头与结尾，使其符合笔记的基本格式"
+                            "对于换行要使用<br>标签，对于标题要使用对应的<h1><h2>等标签，注意不要输出图片链接信息，"
+                            "在文本的开头加入<h1>标题</h1>，标题根据图片中文本的内容进行总结生成"
+                            "在最后加入对这段文字的理解，并在理解前加入两段空行，以二级标题: <h2>理解</h2>开头，标题后面跟上你的理解内容。"
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": "data:image/webp;base64,{}".format(img_str),
+                            },
+                        },
+                    ],
+                },
+            ],
+            )
+            result = completion.choices[0].message.content
+            print(result)
+            return jsonify({'status': 200, 'message': f'{result}'}), 200
+        except Exception as e:
+            print(e)
+            return jsonify({'status': 'fail', 'message': 'OCR fail'}), 400
+    else:
+        return jsonify({'status': 'fail', 'message': 'Invalid file type'}), 400
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)

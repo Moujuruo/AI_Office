@@ -6,10 +6,14 @@ import {
   Collapse,
   Input,
   Radio,
-  ConfigProvider
+  ConfigProvider,
+  Tag,
+  Upload
 } from "antd";
+import type { UploadProps } from 'antd/lib/upload';
 import {
-  SaveOutlined
+  SaveOutlined,
+  UploadOutlined
 } from "@ant-design/icons"
 import HttpUtil from "../utils/HttpUtil";
 import ApiUtil from "../utils/ApiUtil";
@@ -35,6 +39,10 @@ type State = {
   noteTitles: string[];
   noteImportances: string[];
   noteSaveTimes: string[];
+  groupNoteTitles: string[];
+  groupNoteImportances: string[];
+  groupNoteSaveTimes: string[];
+  groupNoteEditor: string[];
   noteContentCache: { [key: string]: string };
 };
 
@@ -54,12 +62,17 @@ class NoteList extends React.Component<{}, State> {
     noteSaveTimes: [],
     noteImportances: [],
     noteContentCache: {},
+    groupNoteTitles: [],
+    groupNoteImportances: [],
+    groupNoteSaveTimes: [],
+    groupNoteEditor: [],
   };
   saveInterval: NodeJS.Timeout | undefined;
 
   componentDidMount() {
     this.saveInterval = setInterval(() => this.autoSave(), 30000);
     this.getNoteTitles();
+    this.getGroupNoteTitles();
   }
 
   componentWillUnmount() {
@@ -125,6 +138,7 @@ class NoteList extends React.Component<{}, State> {
         this.setState({ success: "save_failed" });
       }
       this.getNoteTitles();
+      this.getGroupNoteTitles();
     } catch (error) {
       this.setState({ success: "save_failed" });
     }
@@ -138,11 +152,44 @@ class NoteList extends React.Component<{}, State> {
           this.setState({ noteImportances: data.importances });
           this.setState({ noteSaveTimes: data.save_times });
         } else {
-          message.error("获取笔记列表失败！");
+          message.error("获取个人笔记列表失败！");
         }
       }
     );
   };
+  
+  getGroupNoteTitles = () => {
+    HttpUtil.get(ApiUtil.API_GROUP_NOTE_LIST + this.state.userName).then(
+      async (data: any) => {
+        if (data.status === 200) {
+          this.setState({ groupNoteTitles: data.titles });
+          this.setState({ groupNoteImportances: data.importances });
+          this.setState({ groupNoteSaveTimes: data.save_times });
+          this.setState({ groupNoteEditor: data.editors });
+          console.log(data.titles)
+        } else {
+          message.error("获取团队笔记列表失败！");
+        }
+      }
+    );
+  };
+
+  getGroupNoteContent = async (title: string, username: string): Promise<string> => {
+  try {
+    const data: any = await HttpUtil.get(
+      ApiUtil.API_NOTE_CONTENT + username + "/" + title
+    );
+    if (data.status === 200) {
+      return data.data[0];
+    } else {
+      message.error("获取笔记内容失败！");
+      return "";
+    }
+  } catch (error) {
+    message.error("获取笔记内容失败！");
+    return "";
+  }
+};
 
   getNoteContent = async (title: string): Promise<string> => {
   if (this.state.noteContentCache[title]) {
@@ -192,6 +239,7 @@ class NoteList extends React.Component<{}, State> {
       if (data.status === 200) {
         message.success("删除笔记成功！");
         this.getNoteTitles();
+        this.getGroupNoteTitles();
       } else {
         message.error("删除笔记失败！");
       }
@@ -207,6 +255,35 @@ class NoteList extends React.Component<{}, State> {
       return '#fff1f0';
     }
   }
+
+  handleUpload = (options: any) => {
+        const { file, onSuccess, onError } = options;
+        const formData = new FormData();
+        formData.append('file', file);
+
+        HttpUtil.upload(ApiUtil.API_UPLOAD_NOTE_IMAGE, formData)
+            .then((response: any) => {
+                console.log('Upload response:', response);
+                if (response.status === 200) {
+                    message.success('图片上传成功');
+                    onSuccess(response.data, file);
+                    this.setState({
+                      content: response.message,
+                    });
+                } else {
+                    message.error('图片上传失败');
+                    onError(new Error('Upload failed'));
+                }
+            })
+            .catch(error => {
+                console.error('Error uploading image:', error);
+                message.error('Error uploading image');
+                onError(error);
+            });
+    };
+
+
+
 
   render() {
     return (
@@ -290,13 +367,19 @@ class NoteList extends React.Component<{}, State> {
                 </Radio.Group>
                 <Button
                   type="primary"
-                  style={{ marginLeft: 20 }}
+                  style={{ marginLeft: 20, marginRight: 20}}
                   onClick={() => this.addContent(this.state, false)}
                   icon={<SaveOutlined />}
                   iconPosition="start"
                 >
                   保存
                 </Button>
+                <Upload
+                    showUploadList={true}
+                    customRequest={this.handleUpload}
+                >
+                  <Button icon={<UploadOutlined />}>上传图片AI分析</Button>
+                </Upload>
               </div>
               <div
                 style={{
@@ -314,7 +397,9 @@ class NoteList extends React.Component<{}, State> {
                 value={this.state.content || ""}
                 onChange={this.handleContentChange}
                 className="my-editor"
-                style={{ marginBottom: 20 }}
+                style={{ marginBottom:0 ,
+                  marginTop: 15,
+                }}
                 modules={{
                   toolbar: [
                     ["bold", "italic", "underline", "strike"], // toggled buttons
@@ -341,147 +426,280 @@ class NoteList extends React.Component<{}, State> {
           </Content>
           <div style={{ margin: "20px 0" }} />
           <Content>
-            <div style={{ marginLeft: 20, marginRight: 20, marginTop: 30 }}>
-              <QueueAnim delay={300} type='top'>
-                {this.state.noteTitles.map((title: string, index) => {
-                  const importance = this.state.noteImportances[index];
-                  const importance_color =
-                    this.getColorByImportance(importance);
-                  return (
-                    <div key={index}>
-                      <ConfigProvider
-                        theme={{
-                          token: {},
-                          components: {
-                            Collapse: {
-                              colorBorder: importance_color,
-                              headerBg: importance_color,
-                            },
-                          },
-                        }}
-                      >
-                        <Collapse
-                          onChange={async () => {
-                            const note_content: string =
-                              await this.getNoteContent(title);
-                            this.setState((prevState) => ({
-                              noteContentCache: {
-                                ...prevState.noteContentCache,
-                                [title]: note_content,
+            <div
+              style={{
+                marginLeft: 20,
+                marginRight: 20,
+                marginTop: 30,
+                display: "flex",
+              }}
+            >
+              <div
+                style={{
+                  width: "50%",
+                  marginLeft: 10,
+                  marginRight: 10,
+                }}
+              >
+                <Tag color="blue" style={{ marginTop: 10, marginBottom: 10 }}>
+                  个人笔记
+                </Tag>
+                <QueueAnim delay={300} type="top">
+                  {this.state.noteTitles.map((title: string, index) => {
+                    const importance = this.state.noteImportances[index];
+                    const importance_color =
+                      this.getColorByImportance(importance);
+                    return (
+                      <div key={index}>
+                        <ConfigProvider
+                          theme={{
+                            token: {},
+                            components: {
+                              Collapse: {
+                                colorBorder: importance_color,
+                                headerBg: importance_color,
                               },
-                            }));
+                            },
                           }}
                         >
-                          <Panel
-                            header={
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "flex-end",
-                                }}
-                              >
-                                <span
-                                  style={{ fontSize: "Large", marginRight: 10 }}
-                                >
-                                  🏷️{" "}
-                                </span>
-                                <span
-                                  style={{
-                                    fontWeight: "bold",
-                                    marginRight: "auto",
-                                    paddingTop: 4,
-                                  }}
-                                >
-                                  {title}
-                                </span>
-                                <ConfigProvider
-                                  theme={{
-                                    components: {
-                                      Button: {
-                                        defaultBg: "#ffffff",
-                                        defaultHoverBg: "#1677FF",
-                                        defaultColor: "#2f54eb",
-                                        defaultHoverColor: "#ffffff",
-                                        lineWidth: 0,
-                                      },
-                                    },
-                                  }}
-                                >
-                                  <div
-                                    style={{
-                                      marginRight: 20,
-                                      paddingTop: 6,
-                                      color: "#aaa",
-                                    }}
-                                  >
-                                    上次修改: {this.state.noteSaveTimes[index]}
-                                  </div>
-                                  <Button
-                                    type="default"
-                                    style={{ marginLeft: 10 }}
-                                    onClick={async (event) => {
-                                      event.stopPropagation();
-                                      const note_content: string =
-                                        await this.getNoteContent(title);
-                                      this.setState((prevState) => ({
-                                        noteContentCache: {
-                                          ...prevState.noteContentCache,
-                                          [title]: note_content,
-                                        },
-                                      }));
-                                      this.handleEditBottonClick(
-                                        title,
-                                        note_content,
-                                        importance
-                                      );
-                                    }}
-                                  >
-                                    编辑
-                                  </Button>
-                                </ConfigProvider>
-                                <ConfigProvider
-                                  theme={{
-                                    components: {
-                                      Button: {
-                                        defaultBg: "#ffffff",
-                                        defaultColor: "#f5222d",
-                                        defaultHoverBg: "#ff4d4f",
-                                        defaultHoverColor: "#ffffff",
-                                        lineWidth: 0,
-                                      },
-                                    },
-                                  }}
-                                >
-                                  <Button
-                                    type="default"
-                                    style={{ marginLeft: 10 }}
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      this.deleteNote(title);
-                                    }}
-                                  >
-                                    删除
-                                  </Button>
-                                </ConfigProvider>
-                              </div>
-                            }
-                            key={index}
+                          <Collapse
+                            onChange={async () => {
+                              const note_content: string =
+                                await this.getNoteContent(title);
+                              this.setState((prevState) => ({
+                                noteContentCache: {
+                                  ...prevState.noteContentCache,
+                                  [title]: note_content,
+                                },
+                              }));
+                            }}
                           >
-                            <div
-                              dangerouslySetInnerHTML={{
-                                __html:
-                                  this.state.noteContentCache[title] ?? "",
-                              }}
-                            />
-                          </Panel>
-                        </Collapse>
+                            <Panel
+                              header={
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "flex-end",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      fontSize: "Large",
+                                      marginRight: 10,
+                                    }}
+                                  >
+                                    🏷️{" "}
+                                  </span>
+                                  <span
+                                    style={{
+                                      fontWeight: "bold",
+                                      marginRight: "auto",
+                                      paddingTop: 4,
+                                    }}
+                                  >
+                                    {title}
+                                  </span>
+                                  <ConfigProvider
+                                    theme={{
+                                      components: {
+                                        Button: {
+                                          defaultBg: "#ffffff",
+                                          defaultHoverBg: "#1677FF",
+                                          defaultColor: "#2f54eb",
+                                          defaultHoverColor: "#ffffff",
+                                          lineWidth: 0,
+                                        },
+                                      },
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        marginRight: 20,
+                                        paddingTop: 6,
+                                        color: "#aaa",
+                                      }}
+                                    >
+                                      上次修改:{" "}
+                                      {this.state.noteSaveTimes[index]}
+                                    </div>
+                                    <Button
+                                      type="default"
+                                      style={{ marginLeft: 10 }}
+                                      onClick={async (event) => {
+                                        event.stopPropagation();
+                                        const note_content: string =
+                                          await this.getNoteContent(title);
+                                        this.setState((prevState) => ({
+                                          noteContentCache: {
+                                            ...prevState.noteContentCache,
+                                            [title]: note_content,
+                                          },
+                                        }));
+                                        this.handleEditBottonClick(
+                                          title,
+                                          note_content,
+                                          importance
+                                        );
+                                      }}
+                                    >
+                                      编辑
+                                    </Button>
+                                  </ConfigProvider>
+                                  <ConfigProvider
+                                    theme={{
+                                      components: {
+                                        Button: {
+                                          defaultBg: "#ffffff",
+                                          defaultColor: "#f5222d",
+                                          defaultHoverBg: "#ff4d4f",
+                                          defaultHoverColor: "#ffffff",
+                                          lineWidth: 0,
+                                        },
+                                      },
+                                    }}
+                                  >
+                                    <Button
+                                      type="default"
+                                      style={{ marginLeft: 10 }}
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        this.deleteNote(title);
+                                      }}
+                                    >
+                                      删除
+                                    </Button>
+                                  </ConfigProvider>
+                                </div>
+                              }
+                              key={index}
+                            >
+                              <div
+                                dangerouslySetInnerHTML={{
+                                  __html:
+                                    this.state.noteContentCache[title] ?? "",
+                                }}
+                              />
+                            </Panel>
+                          </Collapse>
 
-                        <div style={{ margin: "10px 0" }} />
-                      </ConfigProvider>
-                    </div>
-                  );
-                })}
-              </QueueAnim>
+                          <div style={{ margin: "10px 0" }} />
+                        </ConfigProvider>
+                      </div>
+                    );
+                  })}
+                </QueueAnim>
+              </div>
+              <div style={{ width: "50%", marginLeft: 10, marginRight: 10 }}>
+                <Tag
+                  color="volcano"
+                  style={{ marginTop: 10, marginBottom: 10 }}
+                >
+                  团队笔记
+                </Tag>
+                <QueueAnim delay={300} type="top">
+                  {this.state.groupNoteTitles.map((title: string, index) => {
+                    const importance = this.state.groupNoteImportances[index];
+                    const importance_color =
+                      this.getColorByImportance(importance);
+                    return (
+                      <div key={index}>
+                        <ConfigProvider
+                          theme={{
+                            token: {},
+                            components: {
+                              Collapse: {
+                                colorBorder: importance_color,
+                                headerBg: importance_color,
+                              },
+                            },
+                          }}
+                        >
+                          <Collapse
+                            onChange={async () => {
+                              const note_content: string =
+                                await this.getGroupNoteContent(
+                                  title,
+                                  this.state.groupNoteEditor[index]
+                                );
+                              this.setState((prevState) => ({
+                                noteContentCache: {
+                                  ...prevState.noteContentCache,
+                                  [title]: note_content,
+                                },
+                              }));
+                            }}
+                          >
+                            <Panel
+                              header={
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "flex-end",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      fontSize: "Large",
+                                      marginRight: 10,
+                                    }}
+                                  >
+                                    📑{" "}
+                                  </span>
+                                  <span
+                                    style={{
+                                      fontWeight: "bold",
+                                      marginRight: "auto",
+                                      paddingTop: 4,
+                                    }}
+                                  >
+                                    {title}
+                                  </span>
+                                  <ConfigProvider
+                                    theme={{
+                                      components: {
+                                        Button: {
+                                          defaultBg: "#ffffff",
+                                          defaultHoverBg: "#1677FF",
+                                          defaultColor: "#2f54eb",
+                                          defaultHoverColor: "#ffffff",
+                                          lineWidth: 0,
+                                        },
+                                      },
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        marginRight: 2,
+                                        paddingTop: 6,
+                                        color: "#aaa",
+                                      }}
+                                    >
+                                      编辑人:{" "}
+                                      {this.state.groupNoteEditor[index]}
+                                      {"   "}上次修改:{" "}
+                                      {this.state.groupNoteSaveTimes[index]}
+                                    </div>
+                                  </ConfigProvider>
+                                </div>
+                              }
+                              key={index}
+                            >
+                              <div
+                                dangerouslySetInnerHTML={{
+                                  __html:
+                                    this.state.noteContentCache[title] ?? "",
+                                }}
+                              />
+                            </Panel>
+                          </Collapse>
+
+                          <div style={{ margin: "10px 0" }} />
+                        </ConfigProvider>
+                      </div>
+                    );
+                  })}
+                </QueueAnim>
+              </div>
             </div>
           </Content>
         </div>

@@ -22,8 +22,10 @@ export default class ApiUtil {
 
     static API_NOTE_UPDATE = ApiUtil.URL_ROOT + '/updateNote';
     static API_NOTE_LIST = ApiUtil.URL_ROOT + '/getNoteList/';
+    static API_GROUP_NOTE_LIST = ApiUtil.URL_ROOT + '/getGroupNoteList/';
     static API_NOTE_CONTENT = ApiUtil.URL_ROOT + '/getNoteContent/';
     static API_NOTE_DELETE = ApiUtil.URL_ROOT + '/deleteNote/';
+    static API_UPLOAD_NOTE_IMAGE = ApiUtil.URL_ROOT + '/uploadNoteImage';
 
     static API_LOGIN = ApiUtil.URL_ROOT + '/login';
     static API_REGISTER = ApiUtil.URL_ROOT + '/register';

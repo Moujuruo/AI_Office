@@ -245,7 +245,7 @@ class TodoList extends React.Component<{}, TodoListState> {
   };
 
   removeData = (id: number) => {
-    HttpUtil.get(`${ApiUtil.API_Activity_DELETE}${id}`)
+    HttpUtil.delete(`${ApiUtil.API_Activity_DELETE}${id}`)
       .then(() => {
         message.success('删除成功');
         this.getData();
