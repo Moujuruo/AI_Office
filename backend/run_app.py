@@ -178,7 +178,7 @@ def getActivityList(job):
     except Exception as e:
         return json.dumps({'code': 1, 'message': str(e)}), 500
 
-@app.route(apiPrefix + 'deleteActivity/<int:id>')
+@app.route(apiPrefix + 'deleteActivity/<int:id>', methods=['DELETE'])
 def deleteActivity(id):
     try:
         result = DBUtil.deleteActivity(id)
@@ -342,6 +342,7 @@ def insertReservation():
     reservation = RBooking.insertreservation(room_id, user_id, start_time, end_time, date, subject)
     if reservation == False:
         return jsonify({'code': 1, 'message': '添加会议室预约失败', 'status': 500 })
+    print(room_id)
     room_name = RBooking.getroomname(room_id)
     activity_name = "会议 - " + room_name + " - " + subject
     meeting_activity = {}
@@ -351,6 +352,7 @@ def insertReservation():
     meeting_activity['ActivityEndDate'] = date
     meeting_activity['ActivityBeginTime'] = start_time
     meeting_activity['ActivityEndTime'] = end_time
+    print(meeting_activity)
     result = DBUtil.updateActivity(json.dumps(meeting_activity))
     if result != '新增成功' and result != '修改成功':
         return jsonify({'code': 1, 'message': '添加会议室预约到日程失败', 'status': 500 })
@@ -391,8 +393,6 @@ def getUserReservations():
     reservations_list.sort(key=lambda x: x['start_time'])
     print(reservations_list)
     return jsonify({'code': 0, 'message': '获取用户预约列表成功', 'status': 200, 'data': reservations_list}), 200
-
-
 
 
 ##### AI 接口 #####
