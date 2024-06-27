@@ -158,6 +158,7 @@ const ReservationModal: React.FC<ReservationModalProps> = ({
         date: values.date.format('YYYY-MM-DD'),
         subject: values.title,
         type: bookingType,
+        team_id: values.teamId || null,
       };
       const response = await HttpUtil.post(ApiUtil.API_INSERT_RESERVATION, newReservation) as ApiResponse<any>;
       if (response.status === 200) {

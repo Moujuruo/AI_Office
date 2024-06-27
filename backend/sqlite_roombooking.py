@@ -29,6 +29,7 @@ def createTables():
         end_time TEXT NOT NULL,
         date TEXT NOT NULL,
         subject TEXT NOT NULL,
+        type INTEGER DEFAULT 0,
         FOREIGN KEY (room_id) REFERENCES meeting_room(id),
         FOREIGN KEY (user_id) REFERENCES users(id))''')
     conn.commit()
@@ -91,6 +92,13 @@ def getallreservationsbyroom(room_id, date):
 def insertreservation(room_id, user_id, start_time, end_time, date, subject):
     try:
         lock_threading.acquire()
+        # 先获取今天的预约情况，如果有冲突则返回False
+        cursor.execute("SELECT * FROM booking WHERE room_id=? AND date=?", (room_id, date))
+        reservations = cursor.fetchall()
+        for reservation in reservations:
+            if (start_time >= reservation[3] and start_time < reservation[4]) or (end_time > reservation[3] and end_time <= reservation[4]) or (start_time <= reservation[3] and end_time >= reservation[4]):
+                return False
+        # 如果没有冲突则插入预约记录
         cursor.execute("INSERT INTO booking (room_id, user_id, start_time, end_time, date, subject) VALUES (?, ?, ?, ?, ?, ?)",
                         (room_id, user_id, start_time, end_time, date, subject))
         conn.commit()
@@ -101,13 +109,43 @@ def insertreservation(room_id, user_id, start_time, end_time, date, subject):
     finally:
         lock_threading.release()
 
+def insertreservation_team(room_id, user_id, start_time, end_time, date, subject, team_id):
+    try:
+        lock_threading.acquire()
+        cursor.execute("SELECT * FROM booking WHERE room_id=? AND date=?", (room_id, date))
+        reservations = cursor.fetchall()
+        for reservation in reservations:
+            if (start_time >= reservation[3] and start_time < reservation[4]) or (end_time > reservation[3] and end_time <= reservation[4]) or (start_time <= reservation[3] and end_time >= reservation[4]):
+                return False
+        cursor.execute("INSERT INTO booking (room_id, user_id, start_time, end_time, date, subject, type) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (room_id, user_id, start_time, end_time, date, subject, team_id))
+        conn.commit()
+        return True
+    except sqlite3.Error as e:
+        print(e)
+        return False
+    finally:
+        lock_threading.release()       
+
 def getuserreservations(user_id):
     try:
         lock_threading.acquire()
         # cursor.execute("SELECT * FROM booking WHERE user_id=?", (user_id,))
         # 加上会议室名称
+        
         cursor.execute("SELECT booking.*, meeting_room.name FROM booking JOIN meeting_room ON booking.room_id = meeting_room.id WHERE booking.user_id=?", (user_id,))
         return cursor.fetchall()
+    except sqlite3.Error as e:
+        print(e)
+        return None
+    finally:
+        lock_threading.release()
+
+def getreservation(reservation_id):
+    try:
+        lock_threading.acquire()
+        cursor.execute("SELECT * FROM booking WHERE id=?", (reservation_id,))
+        return cursor.fetchone()
     except sqlite3.Error as e:
         print(e)
         return None
@@ -123,5 +161,16 @@ def deletereservation(user_id, reservation_id):
     except sqlite3.Error as e:
         print(e)
         return False
+    finally:
+        lock_threading.release()
+
+def getroombycapacity(capacity):
+    try:
+        lock_threading.acquire()
+        # 返回3个会议室，id小的优先，同时返回
+        cursor.execute("SELECT * FROM meeting_room WHERE capacity>=? ORDER BY capacity ASC LIMIT 3", (capacity,))
+    except sqlite3.Error as e:
+        print(e)
+        return None
     finally:
         lock_threading.release()

@@ -336,20 +336,44 @@ def getActivities(UserID):
     finally:
         lock_threading.release()
 
+from datetime import datetime
+
+def parse_time(time_str):
+    for fmt in ('%H:%M:%S', '%H:%M'):
+        try:
+            return datetime.strptime(time_str, fmt).time()
+        except ValueError:
+            pass
+    raise ValueError(f"无法解析时间格式: {time_str}")
+
 def getActivitiesFromData(dataList):
     try:
         lock_threading.acquire()
         activities = []
-        for itemArray in dataList:   # dataList数据库返回的数据集，是一个二维数组
-            # itemArray: (1, 1, 'Meeting', '2024-05-21', '10:00:00', '2024-05-21', '11:00:00')
+        for itemArray in dataList:
             activity = {}
             for columnIndex, columnName in enumerate(activityColumns):
                 columnValue = itemArray[columnIndex]
                 activity[columnName] = columnValue
             activities.append(activity)
         
-        activities.sort(key=lambda x: (x['ActivityBeginDate'], x['ActivityBeginTime'], x['ActivityEndDate'], x['ActivityEndTime']), reverse=True)
-
+        def get_activity_status(activity):
+            now = datetime.now()
+            begin_date = datetime.strptime(activity['ActivityBeginDate'], '%Y-%m-%d').date()
+            begin_time = parse_time(activity['ActivityBeginTime'])
+            end_date = datetime.strptime(activity['ActivityEndDate'], '%Y-%m-%d').date()
+            end_time = parse_time(activity['ActivityEndTime'])
+            begin_datetime = datetime.combine(begin_date, begin_time)
+            end_datetime = datetime.combine(end_date, end_time)
+            if now < begin_datetime:
+                return 1  # 未开始
+            elif begin_datetime <= now <= end_datetime:
+                return 0  # 进行中
+            else:
+                return 2  # 已结束
+        
+        activities.sort(key=lambda x: (get_activity_status(x), datetime.combine(datetime.strptime(x['ActivityEndDate'], '%Y-%m-%d').date(), parse_time(x['ActivityEndTime']))))
+        
         return activities
     except Exception as e:
         print(repr(e))
@@ -370,11 +394,24 @@ def deleteActivity(activity_id):
     finally:
         lock_threading.release()
 
+def deleteActivityByActivityName(activity_name, date):
+    try:
+        lock_threading.acquire()
+        sql = 'DELETE FROM TodoActivity WHERE ActivityName = ? and ActivityBeginDate = ?'
+        cursor.execute(sql, (activity_name, date))
+        conn.commit()
+        return '删除成功'
+    except Exception as e:
+        print(repr(e))
+        return '删除失败'
+    finally:
+        lock_threading.release()
+
 def insertOrUpdateTodoItem(item):
     try:
         lock_threading.acquire()
         item = json.loads(item)
-        current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         if item['ItemStatus'] == '进行中':
             item['ongoing_time'] = current_time
         elif item['ItemStatus'] == '已完成':
@@ -385,9 +422,8 @@ def insertOrUpdateTodoItem(item):
         item_id = item.get('ItemID', 0)
         ItemContent = item.get('ItemContent', '')
         ItemLevel = item.get('ItemLevel', 0)
-        ItemStatus = item.get('ItemStatus', '未开始')
+        ItemStatus = item.get('Status', '未开始')
         # UserID = int(item.get('UserID', 0))
-        print(item_id,ItemContent,ItemLevel)
         if item_id == 0:  # 新增
             keys = ''
             values = ''

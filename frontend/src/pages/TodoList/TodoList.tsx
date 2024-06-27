@@ -462,6 +462,7 @@ class TodoList extends React.Component<{}, TodoListState> {
                 ]}
                 value={activityStatus}
                 onChange={this.handleActivityStatusChange}
+                defaultValue='ongoing'
               />
               </div>
               <div>
