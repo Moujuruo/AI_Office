@@ -15,6 +15,7 @@ import pytesseract
 from PIL import Image
 import base64
 from openai import OpenAI
+import arrow
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = './uploads'
@@ -233,6 +234,7 @@ def getActivityStatistics(job):
 @app.route(apiPrefix + 'updateItem', methods=['POST'])
 def addOrUpdateItem():
     try:
+        print(request.get_json())
         data = request.get_json()
         result = DBUtil.insertOrUpdateTodoItem(json.dumps(data))
         print(result)
@@ -334,12 +336,19 @@ def insertReservation():
     print(data)
     
     room_id = data.get('room_id')
-    user_id = data.get('user_id')
+    user_id = data.get('user_id') # 可能是string，待查
     start_time = data.get('start_time')
     end_time = data.get('end_time')
     date = data.get('date')
     subject = data.get('subject')
-    reservation = RBooking.insertreservation(room_id, user_id, start_time, end_time, date, subject)
+    type = data.get('type')
+    team_id = data.get('team_id')
+    
+    if type != 'team':
+        reservation = RBooking.insertreservation(room_id, user_id, start_time, end_time, date, subject)
+    else:
+        reservation = RBooking.insertreservation_team(room_id, user_id, start_time, end_time, date, subject, team_id)
+
     if reservation == False:
         return jsonify({'code': 1, 'message': '添加会议室预约失败', 'status': 500 })
     print(room_id)
@@ -354,6 +363,33 @@ def insertReservation():
     meeting_activity['ActivityEndTime'] = end_time
     print(meeting_activity)
     result = DBUtil.updateActivity(json.dumps(meeting_activity))
+
+    if type == 'team':
+        member_ids = Team.get_team_members(team_id)
+        for member_id in member_ids:
+            if int(member_id[0]) != int(user_id):
+                activity_name = "会议 - " + room_name + " - " + subject
+                meeting_activity = {}
+                meeting_activity['UserID'] = member_id[0]
+                meeting_activity['ActivityName'] = activity_name
+                meeting_activity['ActivityBeginDate'] = date
+                meeting_activity['ActivityEndDate'] = date
+                meeting_activity['ActivityBeginTime'] = start_time
+                meeting_activity['ActivityEndTime'] = end_time
+                result = DBUtil.updateActivity(json.dumps(meeting_activity))
+                result2 = Team.insertMeetingRoomReservation(room_id, member_id[0], user_id, start_time, end_time, date, subject, team_id)
+
+                # insertOrUpdateTodoItem
+                # item = {}
+                # item['ActivityID'] = result['ActivityID']
+                # item['UserID'] = member_id[0]
+                # item['ItemCotent'] = '会议 - ' + room_name + ' - ' + subject
+
+                
+                print(result2)
+                
+
+
     if result != '新增成功' and result != '修改成功':
         return jsonify({'code': 1, 'message': '添加会议室预约到日程失败', 'status': 500 })
 
@@ -367,8 +403,22 @@ def deleteReservation():
     data = request.get_json()
     print(data)
     reservation_id = data.get('reservation_id')
+    reservation = RBooking.getreservation(reservation_id)
+    type = reservation[7]
     user_id = data.get('user_id')
     result = RBooking.deletereservation(user_id, reservation_id)
+    room_id, user_id, start_time, end_time, date, subject, team_id = reservation[1], reservation[2], reservation[3], reservation[4], reservation[5], reservation[6], reservation[7]
+    room_name = RBooking.getroomname(room_id)
+    if type != 0:
+        member_ids = Team.get_team_members(team_id)
+        for member_id in member_ids:
+            if int(member_id[0]) != int(user_id):
+                result2 = Team.insertMeetingRoomReservation(room_id, member_id[0], user_id, start_time, end_time, date, subject, team_id, 1)
+            print(result2)
+    activity_name = "会议 - " + room_name + " - " + subject
+    result3 = DBUtil.deleteActivityByActivityName(activity_name, date)
+    print(result3)
+
     if result == False:
         return jsonify({'code': 1, 'message': '删除会议室预约失败', 'status': 500 })
     return jsonify({'code': 0, 'message': '删除会议室预约成功', 'status': 200 }), 200    
@@ -379,9 +429,10 @@ def getUserReservations():
     data = request.get_json()
     user_id = data.get('user_id')
     reservations = RBooking.getuserreservations(user_id)
+    print(reservations)
     if reservations is None:
         return jsonify({'code': 1, 'message': '获取用户预约列表失败', 'status': 500 })
-    keys = ['id', 'room_id', 'user_id', 'start_time', 'end_time', 'date', 'subject', 'room_name']
+    keys = ['id', 'room_id', 'user_id', 'start_time', 'end_time', 'date', 'subject', 'type', 'room_name']
     # date 小于今天的不显示
     reservations_list = []
     for reservation in reservations:
@@ -396,20 +447,76 @@ def getUserReservations():
 
 
 ##### AI 接口 #####
+reservation_flags = {}
+chat_history = {}
 @app.route(apiPrefix + 'aiChat', methods=['POST'])
 def getAIResult():
-    prompt = '''你是一个智能办公助手，你的能力有下面几种: 1. 回答有关日程的安排。2. 回答有关会议室的安排、预约情况等 3. 帮助用户进行日程的插入 4. 帮助用户进行会议室的预约。5. 其它不属于以上四种的情况。无论用户输入什么，你的输出回答里都有且只能有一个阿拉伯数字，即判断是上面的五种能力中的哪一种。\n例如:用户输入:帮我预定一间下午的会议室，两个小时 你的回答:4; 用户输入:帮我查询今天研讨室的预约情况 你的回答:2; 用户输入:昨晚什么天气?利物浦赢了吗?1+1等于几 你的回答:5; 用户输入:帮我查查看今天有什么紧急的事 你的回答:1; 用户输入:帮我在旅游事项里加入一项订机票 你的回答:3;'''
+    llm_qianfa = LLM.Qianfan()
+    llm = LLM.LLMInterface()
+    llm_minimax = LLM.MiniMax()
     data = request.get_json()
     userID = data.get('userID')
     content = data.get('content')
+    day_and_time = Arrow.now().format('YYYY-MM-DD HH:mm:ss')
 
-    llm_qianfa = LLM.Qianfan()
-    llm = LLM.LLMInterface()
+    if userID in reservation_flags and reservation_flags[userID]:
+        prompt_capacity = '''请判断这句话里是否含有预约会议室的人数信息，若有只要回答人数，若没有则回答无。 例如：我想预定一个五人的会议室。 回答：5； 我想在明天定一个会议室，回答：无'''
+        content1 = prompt_capacity + '\n\n' + content
+        print(content1)
+        response = llm_qianfa.query(content1)
+        print(response)
+        try:
+            number_of_people = re.findall(r'\d+', response)[0]
+            number_of_people = int(number_of_people)
+        except:
+            number_of_people = 0
+
+        meeting_rooms = RBooking.getroombycapacity(number_of_people)
+        keys = ['id', 'name', 'floor', 'capacity', 'equipment']
+        meeting_rooms = [dict(zip(keys, room)) for room in meeting_rooms]
+
+        prompt_head = '''你是会议室预约小助手，会议室预约的必选项是会议主题、会议预约日期、会议预约时间（可以是时间段也可以是时间长度，若是后者，你要为用户选择一个时间，格式例如9:00-12:00），可选项是会议人数(default=5)，会议室名称(default根据数据选择）。你要根据用户输入判断是否覆盖了必选项的所有。如果缺了，请你必须告知用户需要补充什么信息，此时**不需要**返回json；如果没缺：你**仅**需返回一个json格式，key必须为：subject, date, time, room_name, room_id, number_of_people。\n\n'''
+
+        history = chat_history.get(userID)
+        # 列表合并为字符串
+        history = '\n'.join(history)
+        
+        # content按\n分割取最后一个
+        content = content.split('\n')[-1]
+
+        content2 = prompt_head + '可用会议室：' + str(meeting_rooms) + '\n\n' + '现在的时间是：' + day_and_time + '\n\n' + '请按照我的指令执行：' + '\n\n' + history + '\n\n' + content
+
+        response = llm_minimax.query(content2)
+        print(response)
+
+        try:
+            # json
+            response = json.loads(response)
+            print(response)
+            reservation_flags[userID] = False
+            chat_history[userID] = []
+            return jsonify({'code': 0, 'message': '获取AI结果成功', 'status': 200, 'data': response, 'json': "true"}), 200
+
+        except:
+            reservation_flags[userID] = True
+            if chat_history.get(userID) is None:
+                chat_history[userID] = []
+            chat_history[userID].append(content)
+            return jsonify({'code': 0, 'message': '获取AI结果成功', 'status': 200, 'data': response}), 200
+        
+
+    prompt = '''你是一个智能办公助手，你的能力有下面几种: 1. 回答有关日程的安排。2. 回答有关会议室的安排、预约情况等 3. 帮助用户进行日程的插入 4. 帮助用户进行会议室的预约。5. 其它不属于以上四种的情况。无论用户输入什么，你的输出回答里都有且只能有一个阿拉伯数字，即判断是上面的五种能力中的哪一种。\n例如:用户输入:帮我预定一间下午的会议室，两个小时 你的回答:4; 用户输入:今天我有哪些会议 你的回答:2; 用户输入:昨晚什么天气?利物浦赢了吗?1+1等于几 你的回答:5; 用户输入:帮我查查看今天有什么紧急的事 你的回答:1; 用户输入:帮我在旅游事项里加入一项订机票 你的回答:3; 用户输入：我想预定一间会议室 你的回答：4；用户输入：我今天有哪些日程 你的回答：1'''
+    
+    print(content)
+
+    
     response = llm_qianfa.query(prompt + '\n\n' + content)
     print(response)
     # 提取response中的数字
-    response_type = re.findall(r'\d+', response)[0]
-    day_and_time = Arrow.now().format('YYYY-MM-DD HH:mm:ss')
+    try:
+        response_type = re.findall(r'\d+', response)[0]
+    except:
+        response_type = '5'
 
     if (response_type == '1'):
         activities = DBUtil.getActivities(int(userID))
@@ -417,18 +524,67 @@ def getAIResult():
         keys = ["ActivityID", "UserID", "ActivityName", "ActivityBeginDate", "ActivityBeginTime", "ActivityEndDate", "ActivityEndTime"]
         # keys和activities都删去第1列（从0开始）
         activities_list = [dict(zip(keys, activity)) for activity in activities]
-        prompt_head = '''你是我的日程问答小助手，以下是我的日程安排：\n\n'''
-        prompt_tail = '''\n\n请回答我的问题：'''
+        # 把日期在3天前的日程删去
+        activities_list = [
+            activity for activity in activities_list
+            if arrow.get(activity["ActivityEndDate"], 'YYYY-MM-DD').shift(days=3) >= Arrow.now()
+        ]
+        print(activities_list)
+        prompt_head = '''你是我的日程问答小助手，以下是我的日程安排，日程分为尚未开始，正在进行，已经结束三种：\n\n'''
+        prompt_tail = '''\n\n请回答我的问题(注意今天的日期在活动开始和结束日期之间的都算今天正在进行的日程，例如假设今天是2024年6月12日，那么如果我问今天有哪些日程，**那么我问的是今天正在进行的日程有哪些**你要回答的内容包括开始在12日前(例如6月1日)且结束在12日后的所有日程(例如6月30日))：'''
         prompt = prompt_head + str(activities_list) + '\n\n' + '现在的时间是：' + day_and_time + '\n\n' + prompt_tail + '\n\n'
-        response = llm.query(content, prefix_prompt=prompt)
+        content = prompt + '\n\n' + content
+        # response = llm.query(content, prefix_prompt=prompt)
+        response = llm_minimax.query(content)
     elif (response_type == '2'):
         reservations = RBooking.getallreservations(Arrow.now().format('YYYY-MM-DD'))
         keys = ['id', 'room_id', 'user_id', 'start_time', 'end_time', 'date']
         reservations_list = [dict(zip(keys, reservation)) for reservation in reservations]
-        prompt_head = '''你是我的预约记录问答小助手，以下是我的预约记录：\n\n'''
-        prompt_tail = '''\n\n请回答我的问题：'''
-        prompt = prompt_head + str(reservations_list) + '\n\n' + '现在的时间是：' + day_and_time + '\n\n' + prompt_tail + '\n\n'
-        response = llm.query(content, prefix_prompt=prompt)
+        if len(reservations_list) == 0:
+            reservations_list = ["今天所有会议室都可用，暂无预约记录"]
+        prompt_head = '''你是我的预约记录问答小助手，以下是我的预约记录：\n'''
+        prompt_tail = '''\n\n请注意，你一定要回答的正确，例如问今天有哪些会议，就不要输出昨天的会议。请回答我的问题：'''
+        prompt = prompt_head + str(reservations_list) + '\n\n' + '现在的时间是：' + day_and_time + '\n\n' + '我的user_id是' + str(userID) + prompt_tail + '\n\n'
+        content = prompt + '\n\n' + content
+        print(content)
+        response = llm_minimax.query(content)
+    elif (response_type == '4'):
+        prompt_capacity = '''请判断这句话里是否含有预约会议室的人数信息，若有只要回答人数，若没有则回答无。 例如：我想预定一个五人的会议室。 回答：5； 我想在明天定一个会议室，回答：无'''
+        content1 = prompt_capacity + '\n\n' + content
+        print(content1)
+        response = llm_qianfa.query(content1)
+        print(response)
+        try:
+            number_of_people = re.findall(r'\d+', response)[0]
+            number_of_people = int(number_of_people)
+        except:
+            number_of_people = 0
+
+        meeting_rooms = RBooking.getroombycapacity(number_of_people)
+        keys = ['id', 'name', 'floor', 'capacity', 'equipment']
+        rooms_list = [dict(zip(keys, room)) for room in meeting_rooms]
+
+        prompt_head = '''你是会议室预约小助手，会议室预约的必选项是会议主题、会议预约日期、会议预约时间（可以是时间段也可以是时间长度，若是后者，你要为用户选择一个时间, 格式例如9:00-12:00），可选项是会议人数(default=5)，会议室名称(default根据数据选择）。你要根据用户输入判断是否覆盖了必选项的所有。如果有缺漏，请你告知用户需要补充什么信息，此时**不需要**返回json；如果没缺：你**仅**需返回一个json格式，key必须为：subject, date, time, room_name, room_id, number_of_people。\n\n'''
+
+        content2 = prompt_head + '可用会议室：' + str(rooms_list) + '\n\n' + '现在的时间是：' + day_and_time + '\n\n' + '请按照我的指令执行：' + '\n\n' + content
+        print(content2)
+        response = llm_minimax.query(content2)
+        print(response)
+
+        try:
+            # json
+            print(response)
+            reservation_flags[userID] = False
+            chat_history[userID] = []
+            return jsonify({'code': 0, 'message': '获取AI结果成功', 'status': 200, 'data': response}), 200
+        except:
+            reservation_flags[userID] = True
+            if chat_history.get(userID) is None:
+                chat_history[userID] = []
+            chat_history[userID].append(content)
+            return jsonify({'code': 0, 'message': '获取AI结果成功', 'status': 200, 'data': response}), 200
+
+
 
 
 

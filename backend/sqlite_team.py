@@ -4,6 +4,7 @@ import json
 import csv
 from sqlite3 import Error
 import threading
+import sqlite_roombooking as RB
 
 db_name = 'Ai_work'
 
@@ -33,10 +34,47 @@ def createTables():
         PRIMARY KEY (team_id, member_id),
         FOREIGN KEY (team_id) REFERENCES team(id),
         FOREIGN KEY (member_id) REFERENCES users(id))''')
+    # 通知id，会议室id，用户id，预定开始时间，预定结束时间，预定日期
+    cursor.execute('''CREATE TABLE IF NOT EXISTS meeting_room_reservation
+        (id INTEGER PRIMARY KEY AUTOINCREMENT,
+        room_id INTEGER NOT NULL,
+        room_name TEXT NOT NULL,
+        user_id INTEGER NOT NULL,
+        reserve_user_id INTEGER NOT NULL,
+        reserve_user_name TEXT NOT NULL,
+        start_time TEXT NOT NULL,
+        end_time TEXT NOT NULL,
+        date TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        team_id INTEGER,
+        team_name TEXT,
+        type INTEGER DEFAULT 0,
+        FOREIGN KEY (room_id) REFERENCES meeting_room(id),
+        FOREIGN KEY (user_id) REFERENCES users(id))'''
+    )
     
     conn.commit()
 
 createTables()
+
+def insertMeetingRoomReservation(room_id, user_id, reserve_user_id, start_time, end_time, date, subject, team_id, type=0):
+    try:
+        lock_threading.acquire()
+        # 先拿team_id对应的team_name
+        cursor.execute('''SELECT name FROM team WHERE id = ?''', (team_id,))
+        team_name = cursor.fetchone()[0]
+        cursor.execute('''SELECT username FROM users WHERE id = ?''', (reserve_user_id,))
+        reserve_user_name = cursor.fetchone()[0]
+        cursor.execute('''INSERT INTO meeting_room_reservation (room_id, room_name, user_id, reserve_user_id, reserve_user_name, start_time, end_time, date, subject, team_id, team_name, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (room_id, RB.getroomname(room_id), user_id, reserve_user_id, reserve_user_name, start_time, end_time, date, subject, team_id, team_name, type))
+        
+        conn.commit()
+        return True
+    except sqlite3.Error as e:
+        print(e)
+        return False
+    finally:
+        lock_threading.release()
+
 
 def insertTeam(team_name, captain_id):
     try:
