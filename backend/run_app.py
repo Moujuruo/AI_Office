@@ -475,7 +475,7 @@ def getAIResult():
         keys = ['id', 'name', 'floor', 'capacity', 'equipment']
         meeting_rooms = [dict(zip(keys, room)) for room in meeting_rooms]
 
-        prompt_head = '''你是会议室预约小助手，会议室预约的必选项是会议主题、会议预约日期、会议预约时间（可以是时间段也可以是时间长度，若是后者，你要为用户选择一个时间，格式例如9:00-12:00），可选项是会议人数(default=5)，会议室名称(default根据数据选择）。你要根据用户输入判断是否覆盖了必选项的所有。如果缺了，请你必须告知用户需要补充什么信息，此时**不需要**返回json；如果没缺：你**仅**需返回一个json格式，key必须为：subject, date, time, room_name, room_id, number_of_people。\n\n'''
+        prompt_head = '''你是会议室预约小助手，会议室预约的必选项是会议主题、会议预约日期、会议预约时间（可以是时间段也可以是时间长度，若是后者，你要为用户选择一个时间，格式例如9:00-12:00），可选项是会议人数(default=5)，会议室名称(default根据数据选择）。你要根据用户输入判断是否覆盖了必选项的所有。如果缺了，请你必须分点告知用户需要补充什么信息，此时**不需要**返回json；如果没缺：你**仅**需返回一个json格式，key必须为：subject, date, time, room_name, room_id, number_of_people。\n\n'''
 
         history = chat_history.get(userID)
         # 列表合并为字符串
@@ -485,6 +485,7 @@ def getAIResult():
         content = content.split('\n')[-1]
 
         content2 = prompt_head + '可用会议室：' + str(meeting_rooms) + '\n\n' + '现在的时间是：' + day_and_time + '\n\n' + '请按照我的指令执行：' + '\n\n' + history + '\n\n' + content
+        print("==============", content2)
 
         response = llm_minimax.query(content2)
         print(response)
@@ -561,10 +562,11 @@ def getAIResult():
             number_of_people = 0
 
         meeting_rooms = RBooking.getroombycapacity(number_of_people)
+        print(meeting_rooms)
         keys = ['id', 'name', 'floor', 'capacity', 'equipment']
         rooms_list = [dict(zip(keys, room)) for room in meeting_rooms]
 
-        prompt_head = '''你是会议室预约小助手，会议室预约的必选项是会议主题、会议预约日期、会议预约时间（可以是时间段也可以是时间长度，若是后者，你要为用户选择一个时间, 格式例如9:00-12:00），可选项是会议人数(default=5)，会议室名称(default根据数据选择）。你要根据用户输入判断是否覆盖了必选项的所有。如果有缺漏，请你告知用户需要补充什么信息，此时**不需要**返回json；如果没缺：你**仅**需返回一个json格式，key必须为：subject, date, time, room_name, room_id, number_of_people。\n\n'''
+        prompt_head = '''你是会议室预约小助手，会议室预约的必选项是会议主题、会议预约日期、会议预约时间（可以是时间段也可以是时间长度，若是后者，你要为用户选择一个时间, 格式例如9:00-12:00），可选项是会议人数(default=5)，会议室名称(default根据数据选择）。你要根据用户输入判断是否覆盖了必选项的所有。如果有缺漏，请你必须分点告知用户需要补充什么信息，此时**不需要**返回json；如果没缺：你**仅**需返回一个json格式，key必须为：subject, date, time, room_name, room_id, number_of_people。\n\n'''
 
         content2 = prompt_head + '可用会议室：' + str(rooms_list) + '\n\n' + '现在的时间是：' + day_and_time + '\n\n' + '请按照我的指令执行：' + '\n\n' + content
         print(content2)

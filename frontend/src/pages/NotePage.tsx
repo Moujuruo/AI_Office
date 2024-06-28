@@ -168,7 +168,7 @@ class NoteList extends React.Component<{}, State> {
           this.setState({ groupNoteEditor: data.editors });
           console.log(data.titles)
         } else {
-          message.error("获取团队笔记列表失败！");
+          // message.error("获取团队笔记列表失败！");
         }
       }
     );

@@ -169,6 +169,7 @@ def getroombycapacity(capacity):
         lock_threading.acquire()
         # 返回3个会议室，id小的优先，同时返回
         cursor.execute("SELECT * FROM meeting_room WHERE capacity>=? ORDER BY capacity ASC LIMIT 3", (capacity,))
+        return cursor.fetchall()
     except sqlite3.Error as e:
         print(e)
         return None

@@ -59,7 +59,7 @@ class TodoList extends React.Component<{}, TodoListState> {
     currentActivity: null,
     currentItem: null,
     data: [],
-    activityStatus: 'all'
+    activityStatus: 'ongoing'
   };
 
   // 添加一个新的状态用于存储搜索结果
@@ -462,7 +462,6 @@ class TodoList extends React.Component<{}, TodoListState> {
                 ]}
                 value={activityStatus}
                 onChange={this.handleActivityStatusChange}
-                defaultValue='ongoing'
               />
               </div>
               <div>
