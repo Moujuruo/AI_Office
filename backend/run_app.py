@@ -414,7 +414,7 @@ def deleteReservation():
         for member_id in member_ids:
             if int(member_id[0]) != int(user_id):
                 result2 = Team.insertMeetingRoomReservation(room_id, member_id[0], user_id, start_time, end_time, date, subject, team_id, 1)
-            print(result2)
+            # print(result2)
     activity_name = "会议 - " + room_name + " - " + subject
     result3 = DBUtil.deleteActivityByActivityName(activity_name, date)
     print(result3)
@@ -422,7 +422,32 @@ def deleteReservation():
     if result == False:
         return jsonify({'code': 1, 'message': '删除会议室预约失败', 'status': 500 })
     return jsonify({'code': 0, 'message': '删除会议室预约成功', 'status': 200 }), 200    
-    
+
+# getReservationInfo
+@app.route(apiPrefix + 'getReservationInfo', methods=['POST'])
+def getReservationInfo():
+    data = request.get_json()
+    user_id = data.get('userID')
+    reservations = Team.getMeetingRoomReservation(user_id)
+    if reservations is None:
+        return jsonify({'code': 1, 'message': '获取会议室预约列表失败', 'status': 500 })
+    # room_id, room_name, user_id, reserve_user_id, reserve_user_name, start_time, end_time, date, subject, team_id, team_name, type
+    keys = ['id', 'room_id', 'room_name', 'user_id', 'reserve_user_id', 'reserve_user_name', 'start_time', 'end_time', 'date', 'subject', 'team_id', 'team_name', 'type']
+    reservations_list = [dict(zip(keys, reservation)) for reservation in reservations]
+    return jsonify({'code': 0, 'message': '获取会议室预约列表成功', 'status': 200, 'data': reservations_list}), 200
+
+# acceptReservation
+@app.route(apiPrefix + 'acceptReservation', methods=['POST'])  
+def acceptReservation():
+    data = request.get_json()
+    user_id = data.get('userID')
+    reservation_id = data.get('reservation_id')
+    type = data.get('type')
+    result = Team.deleteMeetingRoomReservation(reservation_id, user_id, type)
+    if result == False:
+        return jsonify({'code': 1, 'message': '已读失败', 'status': 500 })
+    return jsonify({'code': 0, 'message': '已读成功', 'status': 200 }), 200
+
 
 @app.route(apiPrefix + 'getUserReservations', methods=['POST'])
 def getUserReservations(): 
@@ -475,7 +500,7 @@ def getAIResult():
         keys = ['id', 'name', 'floor', 'capacity', 'equipment']
         meeting_rooms = [dict(zip(keys, room)) for room in meeting_rooms]
 
-        prompt_head = '''你是会议室预约小助手，会议室预约的必选项是会议主题、会议预约日期、会议预约时间（可以是时间段也可以是时间长度，若是后者，你要为用户选择一个时间，格式例如9:00-12:00），可选项是会议人数(default=5)，会议室名称(default根据数据选择）。你要根据用户输入判断是否覆盖了必选项的所有。如果缺了，请你必须告知用户需要补充什么信息，此时**不需要**返回json；如果没缺：你**仅**需返回一个json格式，key必须为：subject, date, time, room_name, room_id, number_of_people。\n\n'''
+        prompt_head = '''你是会议室预约小助手，会议室预约的必选项是会议主题、会议预约日期、会议预约时间（可以是时间段也可以是时间长度，若是后者，你要为用户选择一个时间，格式例如9:00-12:00），可选项是会议人数(default=5)，会议室名称(default根据数据选择）。你要根据用户输入判断是否覆盖了必选项的所有。如果缺了，请你必须分点告知用户需要补充什么信息，此时**不需要**返回json；如果没缺：你**仅**需返回一个json格式，key必须为：subject, date, time, room_name, room_id, number_of_people。\n\n'''
 
         history = chat_history.get(userID)
         # 列表合并为字符串
@@ -485,6 +510,7 @@ def getAIResult():
         content = content.split('\n')[-1]
 
         content2 = prompt_head + '可用会议室：' + str(meeting_rooms) + '\n\n' + '现在的时间是：' + day_and_time + '\n\n' + '请按照我的指令执行：' + '\n\n' + history + '\n\n' + content
+        print("==============", content2)
 
         response = llm_minimax.query(content2)
         print(response)
@@ -561,10 +587,11 @@ def getAIResult():
             number_of_people = 0
 
         meeting_rooms = RBooking.getroombycapacity(number_of_people)
+        print(meeting_rooms)
         keys = ['id', 'name', 'floor', 'capacity', 'equipment']
         rooms_list = [dict(zip(keys, room)) for room in meeting_rooms]
 
-        prompt_head = '''你是会议室预约小助手，会议室预约的必选项是会议主题、会议预约日期、会议预约时间（可以是时间段也可以是时间长度，若是后者，你要为用户选择一个时间, 格式例如9:00-12:00），可选项是会议人数(default=5)，会议室名称(default根据数据选择）。你要根据用户输入判断是否覆盖了必选项的所有。如果有缺漏，请你告知用户需要补充什么信息，此时**不需要**返回json；如果没缺：你**仅**需返回一个json格式，key必须为：subject, date, time, room_name, room_id, number_of_people。\n\n'''
+        prompt_head = '''你是会议室预约小助手，会议室预约的必选项是会议主题、会议预约日期、会议预约时间（可以是时间段也可以是时间长度，若是后者，你要为用户选择一个时间, 格式例如9:00-12:00），可选项是会议人数(default=5)，会议室名称(default根据数据选择）。你要根据用户输入判断是否覆盖了必选项的所有。如果有缺漏，请你必须分点告知用户需要补充什么信息，此时**不需要**返回json；如果没缺：你**仅**需返回一个json格式，key必须为：subject, date, time, room_name, room_id, number_of_people。\n\n'''
 
         content2 = prompt_head + '可用会议室：' + str(rooms_list) + '\n\n' + '现在的时间是：' + day_and_time + '\n\n' + '请按照我的指令执行：' + '\n\n' + content
         print(content2)

@@ -8,7 +8,7 @@ import styled from 'styled-components';
 import RightTopSection from './RightTopSection';
 import LeftTopSection from './LeftTopSection';
 import RightTopSection2 from './RightTopsection2';
-import { Button, Card, Form, Input, InputNumber, Modal, Select, message } from 'antd';
+import { Button, Card, Flex, Form, Input, InputNumber, Modal, Select, message } from 'antd';
 import moment from 'moment';
 
 const Container = styled.div`
@@ -190,35 +190,57 @@ const Homepage: React.FC = () => {
   };
 
   // 实例化迅飞语音听写
-  // const xfVoice = new XfVoiceDictation({
-  //   APPID: '27ce1c02',
-  //   APISecret: 'NWRhNDM1NTJlMmJiYmU0YWI5OGY1YmNm',
-  //   APIKey: 'c55054b06c4f1753117debf4b31168dd',
-  //   onWillStatusChange: function (oldStatus: any, newStatus: any) {
-  //     console.log('开始识别：', oldStatus, newStatus);
-  //   },
-  //   onTextChange: function (text: any) {
-  //     console.log('识别内容：', text);
-  //     if (text) {
-  //       if (times.current) {
-  //         clearTimeout(times.current);
-  //       }
-  //       times.current = setTimeout(() => xfVoice.stop(), 3000);
-  //       // 将识别内容填充到ProChat的输入框中
-  //       if (chatRef.current) {
-  //         chatRef.current.setValue(text);
-  //       }
-  //     }
-  //   }
-  // });
-
-  // const handleVoiceButtonClick = () => {
-  //   xfVoice.start();
-  // };
-
-  // const handleVoiceStopButtonClick = () => {
-  //   xfVoice.stop();
-  // };
+  const Control = () => {
+    const [isRecording, setIsRecording] = useState(false);
+    const proChat = useProChat();
+    const chatRef = useRef('');
+  
+    const xfVoice = new XfVoiceDictation({
+      APPID: '27ce1c02',
+      APISecret: 'NWRhNDM1NTJlMmJiYmU0YWI5OGY1YmNm',
+      APIKey: 'c55054b06c4f1753117debf4b31168dd',
+      onWillStatusChange: function (oldStatus: any, newStatus: any) {
+        console.log('语音识别状态变化:', oldStatus, newStatus);
+        if (newStatus === 'end') {
+          // 获取识别的文本并发送消息
+          const recognizedText = chatRef.current;
+          if (recognizedText) {
+            proChat.sendMessage(recognizedText);
+            chatRef.current = ''
+            
+          }
+        }
+      },
+      onTextChange: function (text: any) {
+        console.log('识别内容:', text);
+        if (text) {
+          chatRef.current = text;  // 保存识别到的内容
+        }
+      }
+    });
+  
+    const handleVoiceButtonClick = () => {
+      if (isRecording) {
+        xfVoice.stop();
+        setIsRecording(false);
+      } else {
+        chatRef.current = ''
+        xfVoice.start();
+        setIsRecording(true);
+      }
+    };
+  
+    return (
+      <div style={{ paddingBottom: 8, paddingLeft: 24, textAlign: 'right' }}>
+        <Button
+          type={'primary'}
+          onClick={handleVoiceButtonClick}
+        >
+          {isRecording ? '停止录音' : '开始录音'}
+        </Button>
+      </div>
+    );
+  };
 
 
   return (
@@ -237,6 +259,8 @@ const Homepage: React.FC = () => {
         }}
       >
         <div style={{ height: '350px' }}>
+          <ProChatProvider>
+          <Control />
           <ProChat
             helloMessage={'欢迎使用协时通，我是你的智能AI助手！\n我可以帮助你查询日程、安排会议。\n你可以试着问我：\n1. 我今天有哪些安排 \n2. 今天我有哪些会议 \n3. 请帮我预约一个明天下午6人的会议室'}
             request={handleRequest}
@@ -261,6 +285,7 @@ const Homepage: React.FC = () => {
               },
             }}
           />
+          </ProChatProvider>
         </div>
       </div>
     </Container>

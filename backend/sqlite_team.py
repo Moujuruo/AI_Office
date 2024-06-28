@@ -75,6 +75,30 @@ def insertMeetingRoomReservation(room_id, user_id, reserve_user_id, start_time, 
     finally:
         lock_threading.release()
 
+def getMeetingRoomReservation(user_id):
+    try:
+        lock_threading.acquire()
+        cursor.execute('''SELECT * FROM meeting_room_reservation WHERE user_id = ?''', (user_id,))
+        return cursor.fetchall()
+    except sqlite3.Error as e:
+        print(e)
+        return False
+    finally:
+        lock_threading.release()
+
+def deleteMeetingRoomReservation(reservation_id, user_id, type):
+    try:
+        lock_threading.acquire()
+        print(reservation_id, user_id, type)
+        cursor.execute('''DELETE FROM meeting_room_reservation WHERE id = ? AND user_id = ? AND type = ?''', (reservation_id, user_id, type))
+        conn.commit()
+        return True
+    except sqlite3.Error as e:
+        print(e)
+        return False
+    finally:
+        lock_threading.release()
+
 
 def insertTeam(team_name, captain_id):
     try:

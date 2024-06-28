@@ -57,4 +57,7 @@ export default class ApiUtil {
     static API_GET_CAPTAIN_TEAMS = ApiUtil.URL_ROOT + '/getCaptainTeams';
     static API_DELETE_MEMBER = ApiUtil.URL_ROOT + '/deleteMember';
     static API_UPDATE_TEAM_NAME = ApiUtil.URL_ROOT + '/updateTeamName';
+
+    static API_GET_RESERVATION_INFO = ApiUtil.URL_ROOT + '/getReservationInfo';
+    static API_ACCEPT_RESERVATION = ApiUtil.URL_ROOT + '/acceptReservation';
 }

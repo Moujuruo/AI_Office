@@ -3,3 +3,4 @@ Flask==2.3.2
 openai
 arrow
 qianfan
+pytesseract
