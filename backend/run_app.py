@@ -414,7 +414,7 @@ def deleteReservation():
         for member_id in member_ids:
             if int(member_id[0]) != int(user_id):
                 result2 = Team.insertMeetingRoomReservation(room_id, member_id[0], user_id, start_time, end_time, date, subject, team_id, 1)
-            print(result2)
+            # print(result2)
     activity_name = "会议 - " + room_name + " - " + subject
     result3 = DBUtil.deleteActivityByActivityName(activity_name, date)
     print(result3)
@@ -422,7 +422,32 @@ def deleteReservation():
     if result == False:
         return jsonify({'code': 1, 'message': '删除会议室预约失败', 'status': 500 })
     return jsonify({'code': 0, 'message': '删除会议室预约成功', 'status': 200 }), 200    
-    
+
+# getReservationInfo
+@app.route(apiPrefix + 'getReservationInfo', methods=['POST'])
+def getReservationInfo():
+    data = request.get_json()
+    user_id = data.get('userID')
+    reservations = Team.getMeetingRoomReservation(user_id)
+    if reservations is None:
+        return jsonify({'code': 1, 'message': '获取会议室预约列表失败', 'status': 500 })
+    # room_id, room_name, user_id, reserve_user_id, reserve_user_name, start_time, end_time, date, subject, team_id, team_name, type
+    keys = ['id', 'room_id', 'room_name', 'user_id', 'reserve_user_id', 'reserve_user_name', 'start_time', 'end_time', 'date', 'subject', 'team_id', 'team_name', 'type']
+    reservations_list = [dict(zip(keys, reservation)) for reservation in reservations]
+    return jsonify({'code': 0, 'message': '获取会议室预约列表成功', 'status': 200, 'data': reservations_list}), 200
+
+# acceptReservation
+@app.route(apiPrefix + 'acceptReservation', methods=['POST'])  
+def acceptReservation():
+    data = request.get_json()
+    user_id = data.get('userID')
+    reservation_id = data.get('reservation_id')
+    type = data.get('type')
+    result = Team.deleteMeetingRoomReservation(reservation_id, user_id, type)
+    if result == False:
+        return jsonify({'code': 1, 'message': '已读失败', 'status': 500 })
+    return jsonify({'code': 0, 'message': '已读成功', 'status': 200 }), 200
+
 
 @app.route(apiPrefix + 'getUserReservations', methods=['POST'])
 def getUserReservations(): 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Button, Input, message, Modal, Collapse, Badge, ConfigProvider, Tag, Segmented } from 'antd';
+import { Layout, Button, Input, message, Modal, Collapse, Badge, ConfigProvider, Tag, Segmented, Drawer } from 'antd';
 import { ProTable, ProColumns } from '@ant-design/pro-components';
 import { EditOutlined, CloseOutlined, PlusOutlined, SearchOutlined, AppstoreAddOutlined } from '@ant-design/icons';
 import InfoDialog from '../InfoDialog';
@@ -47,6 +47,8 @@ interface TodoListState {
   currentItem: TodoItem | null; // 添加 currentItem 属性
   data: TodoActivity[];
   activityStatus: string;
+  drawerVisible: boolean;
+  drawerActivity: TodoActivity | null;
 }
 
 class TodoList extends React.Component<{}, TodoListState> {
@@ -59,11 +61,26 @@ class TodoList extends React.Component<{}, TodoListState> {
     currentActivity: null,
     currentItem: null,
     data: [],
-    activityStatus: 'ongoing'
+    activityStatus: 'ongoing',
+    drawerVisible: false,
+    drawerActivity: null,
   };
 
   // 添加一个新的状态用于存储搜索结果
   searchData: TodoActivity[] = [];
+
+  showDrawer = (activity: TodoActivity) => {
+    this.setState({
+      drawerVisible: true,
+      drawerActivity: activity,
+    });
+  };
+
+  closeDrawer = () => {
+    this.setState({
+      drawerVisible: false,
+    });
+  };
 
   columns: ProColumns<TodoActivity>[] = [
     {
@@ -85,7 +102,9 @@ class TodoList extends React.Component<{}, TodoListState> {
         }
 
         return (
-          <Badge status={status} text={record.ActivityName} />
+          <span onClick={() => this.showDrawer(record)}>
+            <Badge status={status} text={record.ActivityName} />
+          </span>
         );
       }
     },
@@ -134,7 +153,7 @@ class TodoList extends React.Component<{}, TodoListState> {
       this.filterActivities();
       return;
     }
-    
+
     // 将搜索值转换为小写以进行不区分大小写的匹配
     const searchValue = value.toLowerCase();
 
@@ -169,12 +188,26 @@ class TodoList extends React.Component<{}, TodoListState> {
           })
         );
         this.searchData = activityListWithItems; // 保存所有数据以供搜索使用
-        this.setState({
-          data: activityListWithItems,
-          showInfoDialog: false,
-        }, () => {
-          this.filterActivities(); 
-        });
+        // 如果有打开的 Drawer，找到对应的 Activity 并更新其 items
+        if (this.state.drawerVisible && this.state.drawerActivity) {
+          const updatedDrawerActivity = activityListWithItems.find(
+            (activity) => activity.ActivityID === this.state.drawerActivity?.ActivityID
+          );
+          this.setState({
+            data: activityListWithItems,
+            showInfoDialog: false,
+            drawerActivity: updatedDrawerActivity || null,
+          }, () => {
+            this.filterActivities();
+          });
+        } else {
+          this.setState({
+            data: activityListWithItems,
+            showInfoDialog: false,
+          }, () => {
+            this.filterActivities();
+          });
+        }
       })
       .catch((error) => {
         message.error(error.message);
@@ -235,13 +268,17 @@ class TodoList extends React.Component<{}, TodoListState> {
     }
     //更新数据
     this.getData();
+
+
+
     this.setState({
       showAddItemDialog: false,
-      currentActivity: null,
-      currentItem: null,
+      // currentActivity: null,
+      // currentItem: null, 
       activityStatus: this.state.activityStatus,
-      });
-    
+
+    });
+
   };
 
   removeData = (id: number) => {
@@ -422,7 +459,9 @@ class TodoList extends React.Component<{}, TodoListState> {
 
 
   render() {
-    const { activityStatus } = this.state;
+    // const { activityStatus } = this.state;
+    const { activityStatus, drawerVisible, drawerActivity } = this.state;
+
     console.log('Data:', this.state.data);
     const columns = [...this.columns, this.admin_item]
     return (
@@ -454,15 +493,15 @@ class TodoList extends React.Component<{}, TodoListState> {
                   style={{ width: 200, marginRight: 16 }}
                 />
                 <Segmented
-                options={[
-                  { label: '全部', value: 'all' },
-                  { label: '进行中', value: 'ongoing' },
-                  { label: '已完成', value: 'completed' },
-                  { label: '未开始', value: 'notStarted' }
-                ]}
-                value={activityStatus}
-                onChange={this.handleActivityStatusChange}
-              />
+                  options={[
+                    { label: '全部', value: 'all' },
+                    { label: '进行中', value: 'ongoing' },
+                    { label: '已完成', value: 'completed' },
+                    { label: '未开始', value: 'notStarted' }
+                  ]}
+                  value={activityStatus}
+                  onChange={this.handleActivityStatusChange}
+                />
               </div>
               <div>
                 <Button
@@ -485,7 +524,8 @@ class TodoList extends React.Component<{}, TodoListState> {
 
             <AddItemDialog
               visible={this.state.showAddItemDialog}
-              onCancel={() => this.setState({ showAddItemDialog: false })}
+              // onCancel={() => this.setState({ showAddItemDialog: false })}
+              onCancel={() => this.setState({ showAddItemDialog: false, currentActivity: null, currentItem: null })}
               onAdd={this.handleAddItem}
               activityId={this.state.currentActivity?.ActivityID || 0}
               ItemId={this.state.currentItem?.ItemID || 0}
@@ -569,6 +609,23 @@ class TodoList extends React.Component<{}, TodoListState> {
             </div>
           </div>
         </Content>
+        <Drawer
+          title={drawerActivity?.ActivityName}
+          placement="bottom"
+          height={500}
+          onClose={this.closeDrawer}
+          open={drawerVisible}
+        >
+          <p>
+            开始时间:{" "}
+            {`${drawerActivity?.ActivityBeginDate} ${drawerActivity?.ActivityBeginTime}`}
+          </p>
+          <p>
+            结束时间:{" "}
+            {`${drawerActivity?.ActivityEndDate} ${drawerActivity?.ActivityEndTime}`}
+          </p>
+          {drawerActivity && this.renderItems(drawerActivity.items)}
+        </Drawer>
       </Layout>
     );
   }

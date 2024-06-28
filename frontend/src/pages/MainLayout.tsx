@@ -17,6 +17,19 @@ interface inviteinfo {
     user_id: number
 }
 
+interface reservationinfo {
+    id: number,
+    room_id: number,
+    room_name: string,
+    reserve_user_id: number,
+    reserve_user_name: string,
+    team_id: number,
+    team_name: string,
+    date: string,
+    start_time: string,
+    end_time: string,
+    type: number,
+}
 
 
 const MainLayout: React.FC = () => {
@@ -28,6 +41,7 @@ const MainLayout: React.FC = () => {
     const [api, contextHolder] = notification.useNotification();
     // let invitations: inviteinfo[] = [];
     const [invitations, setInvitations] = useState<inviteinfo[]>([]);
+    const [reservations, setReservations] = useState<reservationinfo[]>([]);
 
     useEffect(() => {
         const avatar = localStorage.getItem('avatarUrl');
@@ -38,6 +52,7 @@ const MainLayout: React.FC = () => {
 
     useEffect(() => {
         checkInvitations();
+        checkMeetings();
     }, []);
 
     const logout = () => {
@@ -85,6 +100,93 @@ const MainLayout: React.FC = () => {
             console.error('获取团队邀请失败:', error);
         }
     };
+
+    // 类似的，展示会议室预定通知，按钮变为已读和忽略，根据type区别，0为通知有会议，1为会议预定取消
+    const checkMeetings = async () => {
+        try {
+            const response = await HttpUtil.post(ApiUtil.API_GET_RESERVATION_INFO, { userID: userID }) as ApiResponse<reservationinfo[]>;
+            console.log('response:', response);
+            if (response.status === 200) {
+                console.log('reservations1:', reservations);
+
+                const newreservations = response.data;
+                setReservations(newreservations);
+
+                if (newreservations.length > 0) {
+                    console.log('reservations:', newreservations);
+                    newreservations.forEach((reservation: any) => {
+                        const { id, room_id, room_name, reserve_user_id, reserve_user_name, team_id, team_name, date, start_time, end_time, type } = reservation;
+                        const key = `reservation-${id}`;
+                        if (type === 0)
+                            api.open({
+                                message: '会议室预定通知',
+                                description: `团队 ${team_name} 于 ${date} ${start_time} - ${end_time} 在 ${room_name} 预定了会议, 请注意查看`,
+                                btn: (
+                                    <div>
+                                        <Button type='primary' onClick={() => acceptMeeting(id, type, key)}>已读</Button>
+                                        <Button onClick={() => {
+                                            api.destroy(key);
+                                        }} style={{ marginLeft: '8px' }}>忽略</Button>
+                                    </div>
+                                ),
+                                key,
+                                duration: 10,
+                                showProgress: true,
+                                onClose: () => api.destroy(key),
+                            });
+                        else
+                            api.open({
+                                message: '会议室预定通知',
+                                description: `团队 ${team_name} 于 ${date} ${start_time} - ${end_time} 在 ${room_name} 取消了会议, 请注意查看`,
+                                btn: (
+                                    <div>
+                                        <Button type='primary' onClick={() => acceptMeeting(id, type, key)}>已读</Button>
+                                        <Button onClick={() => {
+                                            api.destroy(key);
+                                        }} style={{ marginLeft: '8px' }}>忽略</Button>
+                                    </div>
+                                ),
+                                key,
+                                duration: 10,
+                                showProgress: true,
+                                onClose: () => api.destroy(key),
+                            });
+                    });
+                }
+            } else
+                console.log('获取会议室预定通知失败');
+        } catch (error) {
+            console.error('获取会议室预定通知失败:', error);
+        }
+    }
+
+    const acceptMeeting = async (reservation_id: number, type: number, notificationKey: string) => {
+        try {
+            const response = await HttpUtil.post(ApiUtil.API_ACCEPT_RESERVATION, { reservation_id: reservation_id, userID: userID, type: type}) as ApiResponse<string>;
+            if (response.status === 200) {
+                api.success({
+                    message: '已读成功',
+                    description: '已成功标记为已读',
+                });
+                if (notificationKey !== '')
+                    api.destroy(notificationKey);  // Destroy the notification
+                setReservations(reservations.filter(reservation => reservation.id !== reservation_id));
+            } else {
+                api.error({
+                    message: '已读失败',
+                    description: response.data,
+                });
+            }
+        } catch (error) {
+            console.error('已读失败:', error);
+            api.error({
+                message: '已读失败',
+                description: '发生未知错误',
+            });
+        }
+    };
+
+    
 
     const acceptInvitation = async (teamId: number, captainId: number, notificationKey: string) => {
         try {
@@ -290,44 +392,65 @@ const MainLayout: React.FC = () => {
                     <div style={{ display: "flex", alignItems: "center" }}>
                         <Dropdown
                             menu={{
-                                items: invitations.length === 0
+                                items: [
+                                  ...invitations.length === 0 && reservations.length === 0
                                     ? [{ key: 'empty', label: '暂无通知' }]
                                     : invitations.map((invitation) => ({
                                         key: invitation.team_id,
                                         label: (
-                                            <div>
-                                                团队 {invitation.team_id} 的邀请
-                                                <Button
-                                                    type="link"
-                                                    onClick={() =>
-                                                        acceptInvitation(
-                                                            invitation.team_id,
-                                                            invitation.captain_id,
-                                                            ''
-                                                        )
-                                                    }
-                                                >
-                                                    接受
-                                                </Button>
-                                                <Button
-                                                    type="link"
-                                                    onClick={() =>
-                                                        rejectInvitation(
-                                                            invitation.team_id,
-                                                            invitation.captain_id,
-                                                            ''
-                                                        )
-                                                    }
-                                                >
-                                                    拒绝
-                                                </Button>
-                                            </div>
+                                          <div>
+                                            团队 {invitation.team_id} 的邀请
+                                            <Button
+                                              type="link"
+                                              onClick={() =>
+                                                acceptInvitation(
+                                                  invitation.team_id,
+                                                  invitation.captain_id,
+                                                  ''
+                                                )
+                                              }
+                                            >
+                                              接受
+                                            </Button>
+                                            <Button
+                                              type="link"
+                                              onClick={() =>
+                                                rejectInvitation(
+                                                  invitation.team_id,
+                                                  invitation.captain_id,
+                                                  ''
+                                                )
+                                              }
+                                            >
+                                              拒绝
+                                            </Button>
+                                          </div>
                                         ),
-                                    })),
-                            }}
-                            trigger={['click']}
-                        >
-                            <Badge count={invitations.length} offset={[-25, -2]} size='small'>
+                                      })),
+                                  ...reservations.map((reservation: any) => {
+                                    const { id, room_id, room_name, reserve_user_id, reserve_user_name, team_id, team_name, date, start_time, end_time, type } = reservation;
+                                    const key = `reservation-${id}`;
+                                    const message = type === 0 ? '会议室预定通知' : '会议室取消通知';
+                                    const description = type === 0
+                                      ? `团队 ${team_name} 于 ${date} ${start_time} - ${end_time} 在 ${room_name} 预定了会议, 请注意查看`
+                                      : `团队 ${team_name} 于 ${date} ${start_time} - ${end_time} 在 ${room_name} 取消了会议, 请注意查看`;
+                                    return {
+                                      key,
+                                      label: (
+                                        <div>
+                                          {message}
+                                          <div>{description}</div>
+                                          <Button type='primary' onClick={() => acceptMeeting(id, type, key)}>已读</Button>
+                                          <Button onClick={() => api.destroy(key)} style={{ marginLeft: '8px' }}>忽略</Button>
+                                        </div>
+                                      ),
+                                    };
+                                  }),
+                                ],
+                              }}
+                              trigger={['click']}
+                            >
+                            <Badge count={invitations.length + reservations.length} offset={[-25, -2]} size='small'>
                                 <BellOutlined
                                     style={{ fontSize: "24px", marginRight: "25px", cursor: "pointer" }}
                                 />
