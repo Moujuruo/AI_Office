@@ -3,13 +3,13 @@ import re
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import json
-import SqliteUtil as DBUtil
-import sqlite_roombooking as RBooking
-import sqlite_note as RNote
-import sqlite_team as Team
+from . import SqliteUtil as DBUtil
+from . import sqlite_roombooking as RBooking
+from . import sqlite_note as RNote
+from . import sqlite_team as Team
 from werkzeug.utils import secure_filename
 import os
-import llm_interface as LLM
+from . import llm_interface as LLM
 from arrow import Arrow
 import pytesseract
 from PIL import Image
@@ -26,6 +26,17 @@ CORS(app)  # 启用CORS
 @app.route('/hi')
 def hi():
     return 'hi~'
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    # 使用绝对路径指向uploads目录
+    return send_from_directory(os.path.abspath('../uploads'), filename)
+
+@app.route('/assets/<filename>')
+def assets_file(filename):
+    # 使用绝对路径指向assets目录
+    return send_from_directory(os.path.abspath('../assets'), filename)
+
 
 # api接口前缀
 apiPrefix = '/api/v1/'
@@ -129,13 +140,23 @@ def uploadAvatar():
         return jsonify({'status': 'fail', 'message': 'Invalid file type'}), 400
 
     
+# @app.route('/uploads/<filename>')
+# def uploaded_file(filename):
+#     return send_from_directory("../uploads", filename)
+
+# @app.route('/assets/<filename>')
+# def assets_file(filename):
+#     return send_from_directory("../assets", filename)
+
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
-    return send_from_directory("../uploads", filename)
+    # 使用绝对路径指向uploads目录
+    return send_from_directory(os.path.abspath('../uploads'), filename)
 
 @app.route('/assets/<filename>')
 def assets_file(filename):
-    return send_from_directory("../assets", filename)
+    # 使用绝对路径指向assets目录
+    return send_from_directory(os.path.abspath('../assets'), filename)
 
 @app.route(apiPrefix + 'getAvatarById', methods=['GET'])
 def getAvatarById():
@@ -336,7 +357,7 @@ def insertReservation():
     print(data)
     
     room_id = data.get('room_id')
-    user_id = data.get('user_id') 
+    user_id = data.get('user_id') # 可能是string，待查
     start_time = data.get('start_time')
     end_time = data.get('end_time')
     date = data.get('date')
@@ -377,7 +398,15 @@ def insertReservation():
                 meeting_activity['ActivityBeginTime'] = start_time
                 meeting_activity['ActivityEndTime'] = end_time
                 result = DBUtil.updateActivity(json.dumps(meeting_activity))
-                result2 = Team.insertMeetingRoomReservation(room_id, member_id[0], user_id, start_time, end_time, date, subject, team_id)                
+                result2 = Team.insertMeetingRoomReservation(room_id, member_id[0], user_id, start_time, end_time, date, subject, team_id)
+
+                # insertOrUpdateTodoItem
+                # item = {}
+                # item['ActivityID'] = result['ActivityID']
+                # item['UserID'] = member_id[0]
+                # item['ItemCotent'] = '会议 - ' + room_name + ' - ' + subject
+
+                
                 print(result2)
                 
 
@@ -440,7 +469,7 @@ def acceptReservation():
         return jsonify({'code': 1, 'message': '已读失败', 'status': 500 })
     return jsonify({'code': 0, 'message': '已读成功', 'status': 200 }), 200
 
-# getReservationInfo
+
 @app.route(apiPrefix + 'getUserReservations', methods=['POST'])
 def getUserReservations(): 
     data = request.get_json()
@@ -869,6 +898,7 @@ def uploadNoteImage():
     if 'file' not in request.files:
         return jsonify({'status': 'fail', 'message': 'No file part'}), 400
     file = request.files['file']
+    print(file)
     if file.filename == '':
         return jsonify({'status': 'fail', 'message': 'No selected file'}), 400
     if file and allowed_file(file.filename):
@@ -917,4 +947,4 @@ def uploadNoteImage():
         return jsonify({'status': 'fail', 'message': 'Invalid file type'}), 400
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    app.run(host="0.0.0.0", port=5001)

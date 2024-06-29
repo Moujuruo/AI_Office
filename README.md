@@ -162,23 +162,22 @@ sudo vim /etc/nginx/sites-available/AI_Office
 ```
 server {
     listen 80;
-    server_name <your_ip>;
+    server_name 47.92.112.75;  # 使用公网IP
 
+    # 配置前端静态文件路径
     location / {
-        root /home/moujuruo/AI_Office/frontend/build;
+        # React 项目的构建路径
+        root /home/moujuruo/AI_Office/front_end/build;
         try_files $uri /index.html;
     }
 
-    location /api/ {
+    # 配置 API 端点的反向代理
+    location /api {
         include proxy_params;
-        proxy_pass http://localhost:5001;
+        proxy_pass http://localhost:5001;  # 这里假设你的 Flask app 运行在端口5001
     }
 
-    # Add configurations for uploads and assets
-    location /uploads/ {
-        alias /home/moujuruo/AI_Office/uploads/;
-    }
-
+        # Add configurations for uploads and assets
     location /assets/ {
         alias /home/moujuruo/AI_Office/assets/;
     }
@@ -189,13 +188,17 @@ server {
         access_log off;
     }
 
+    location /uploads/ {
+        alias /home/moujuruo/AI_Office/uploads/;
+    }
+
     error_page 404 /index.html;
     location = /index.html {
         root /home/moujuruo/AI_Office/frontend/build;
         internal;
     }
 
-    client_max_body_size 50M;
+    client_max_body_size 50M;  # 允许较大的文件上传，如果需要可以调整
 }
 ```
 
