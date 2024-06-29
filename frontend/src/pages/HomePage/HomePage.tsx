@@ -11,6 +11,7 @@ import RightTopSection2 from './RightTopsection2';
 import { Button, Card, Flex, Form, Input, InputNumber, Modal, Select, message } from 'antd';
 import moment from 'moment';
 
+
 const Container = styled.div`
   display: flex;
   flex-direction: column;
@@ -58,6 +59,33 @@ const Homepage: React.FC = () => {
   const chatRef = useRef<any>(null);
   const [teams, setTeams] = useState<Team[]>([]);
 
+  useEffect(() => {
+    fetchTeams();
+  }, []);
+
+  const fetchTeams = async () => {
+    try {
+      const response = await HttpUtil.post(ApiUtil.API_GET_ALL_TEAMS,
+        {
+          userID: localStorage.getItem('userID')
+        }
+      ) as ApiResponse<Team[]>;
+      if (response.status === 200) {
+        const userID = localStorage.getItem('userID');
+        const filteredTeams = response.data.filter((team) => {
+          console.log(team);
+          return team.is_captain === 1;
+        });
+        setTeams(filteredTeams);
+        console.log(filteredTeams);
+      } else {
+        message.error('获取团队列表失败');
+      }
+    } catch (error) {
+      message.error('获取团队列表失败');
+    }
+  };
+
   const handleSubmit = async (values: any) => {
     try {
       const [startTime, endTime] = values.time.split('-');
@@ -83,12 +111,9 @@ const Homepage: React.FC = () => {
   };
 
   const FormComponent: React.FC<FormComponentProps> = ({ formData }) => {
+
     const [type, setType] = useState('individual');
     const [form] = Form.useForm();
-
-    useEffect(() => {
-      fetchTeams();
-    }, []);
 
     const handleTypeChange = (value: string) => {
       setType(value);
@@ -146,29 +171,6 @@ const Homepage: React.FC = () => {
     );
   };
 
-  const fetchTeams = async () => {
-    try {
-      const response = await HttpUtil.post(ApiUtil.API_GET_ALL_TEAMS,
-        {
-          userID: localStorage.getItem('userID')
-        }
-      ) as ApiResponse<Team[]>;
-      if (response.status === 200) {
-        const userID = localStorage.getItem('userID');
-        const filteredTeams = response.data.filter((team) => {
-          console.log(team);
-          return team.is_captain === 1;
-        });
-        setTeams(filteredTeams);
-        console.log(filteredTeams);
-        console.log('teams:', teams);
-      } else {
-        message.error('获取团队列表失败');
-      }
-    } catch (error) {
-      message.error('获取团队列表失败');
-    }
-  };
 
   const handleRequest = async (messages: any) => {
     try {
@@ -213,6 +215,7 @@ const Homepage: React.FC = () => {
       },
       onTextChange: function (text: any) {
         console.log('识别内容:', text);
+        
         if (text) {
           chatRef.current = text;  // 保存识别到的内容
         }

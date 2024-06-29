@@ -129,6 +129,7 @@ export default () => {
     innerRadius: 0.6,
     label: {
       text: (d: any) => `${d.counts}`,
+      // offset: -10,
       style: {
         fontWeight: 'bold',
       },
@@ -140,6 +141,15 @@ export default () => {
         rowPadding: 5,
       },
     },
+    tooltip: (
+      d: any, // 每一个数据项 
+      index: any, // 索引 
+      data: any, // 完整数据 
+      column: any, // 通道 
+    ) => ({
+      value: d.counts,
+      name: d.type,
+    }),
   };
 
   const getUrgencyScore = (item: TodoItem, activityEndDate: string) => {
